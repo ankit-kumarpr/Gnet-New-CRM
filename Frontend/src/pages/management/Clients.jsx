@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Download, Edit2, Eye, Plus, Search, Trash2 } from "lucide-react";
+import { Download, Edit2, Eye, FileSpreadsheet, Plus, Search, Trash2, Upload } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
+import { FilePicker } from "../../components/ui/FilePicker";
 import { Pager } from "../../components/ui/Pager";
 import { EmployeeSelect } from "../../components/ui/EmployeeSelect";
 import api from "../../services/api";
@@ -108,6 +109,10 @@ export function Clients() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [showForm, setShowForm] = useState(false);
+  const [showBulk, setShowBulk] = useState(false);
+  const [sheet, setSheet] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [bulkErrors, setBulkErrors] = useState([]);
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState({ ...emptyForm, address: { ...emptyAddress } });
   const [exporting, setExporting] = useState(false);
@@ -167,6 +172,7 @@ export function Clients() {
   const openCreate = () => {
     setSelected(null);
     setForm({ ...emptyForm, address: { ...emptyAddress }, services: [], payments: [] });
+    setShowBulk(false);
     setShowForm(true);
   };
 
@@ -307,6 +313,59 @@ export function Clients() {
     }
   };
 
+  const downloadSample = async () => {
+    try {
+      const res = await api.get("/admin/clients/sample", { responseType: "blob" });
+      const url = URL.createObjectURL(res.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "client-sample.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      let message = "Could not download the sample";
+      const data = error.response?.data;
+      if (data instanceof Blob) {
+        try {
+          message = JSON.parse(await data.text()).message || message;
+        } catch {
+          // keep default
+        }
+      }
+      toast.error(message);
+    }
+  };
+
+  const importSheet = async () => {
+    if (!sheet) {
+      toast.error("Choose the Excel file");
+      return;
+    }
+    const data = new FormData();
+    data.append("file", sheet);
+    try {
+      setImporting(true);
+      const res = await api.post("/admin/clients/import", data);
+      const created = res.data.created || 0;
+      const failed = res.data.failed || 0;
+      setBulkErrors(res.data.errors || []);
+      if (created) {
+        toast.success(failed ? `Added ${created} clients. ${failed} rows need a fix.` : `Added ${created} clients`);
+        setSheet(null);
+        load();
+      } else {
+        toast.error("No client was added. Check the rows below.");
+      }
+    } catch (error) {
+      setBulkErrors([]);
+      toast.error(error.response?.data?.message || "Could not add the clients");
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const downloadRenewalsExcel = async () => {
     try {
       setExporting(true);
@@ -360,14 +419,61 @@ export function Clients() {
               {exporting ? "Exporting..." : "Export renewals Excel"}
             </Button>
           )}
-          {canCreate && !showForm && (
-            <Button onClick={openCreate}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add client
-            </Button>
+          {canCreate && (
+            <>
+              <Button type="button" variant="outline" onClick={downloadSample}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Sample Excel
+              </Button>
+              <Button type="button" variant="outline" onClick={() => { setShowBulk((open) => !open); setShowForm(false); }}>
+                <Upload className="mr-2 h-4 w-4" />
+                Bulk add
+              </Button>
+              {!showForm && (
+                <Button onClick={() => { setShowBulk(false); openCreate(); }}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add client
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>
+
+      {showBulk && canCreate && (
+        <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Bulk add clients</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Sample download karo, 50–100 clients fill karo, upload kar do. Sample row skip hoti hai. Welcome mail nahi jati — login password client ID hota hai.
+            </p>
+          </div>
+          <FilePicker
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            file={sheet}
+            disabled={importing}
+            onChange={setSheet}
+            hint="Excel .xlsx, up to 300 clients."
+          />
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => { setShowBulk(false); setSheet(null); setBulkErrors([]); }} disabled={importing}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={importSheet} disabled={importing}>
+              {importing ? "Adding..." : "Upload"}
+            </Button>
+          </div>
+          {bulkErrors.length > 0 && (
+            <ul className="space-y-1 text-sm text-red-700">
+              {bulkErrors.map((item) => (
+                <li key={`${item.row}-${item.message}`}>
+                  {item.row ? `Row ${item.row}: ` : ""}{item.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {showForm && (selected ? canEdit : canCreate) && (
         <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

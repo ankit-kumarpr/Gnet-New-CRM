@@ -42,6 +42,7 @@ const OfferLetter = lazy(() => import("../pages/management/OfferLetter").then((m
 const Permissions = lazy(() => import("../pages/management/Permissions").then((m) => ({ default: m.Permissions })));
 const SoftwareSettings = lazy(() => import("../pages/management/SoftwareSettings").then((m) => ({ default: m.SoftwareSettings })));
 const OfferBanners = lazy(() => import("../pages/management/OfferBanners").then((m) => ({ default: m.OfferBanners })));
+const ClientEmails = lazy(() => import("../pages/management/ClientEmails").then((m) => ({ default: m.ClientEmails })));
 const Attendance = lazy(() => import("../pages/management/Attendance").then((m) => ({ default: m.Attendance })));
 const AttendanceReport = lazy(() => import("../pages/management/AttendanceReport").then((m) => ({ default: m.AttendanceReport })));
 const Chat = lazy(() => import("../pages/management/Chat").then((m) => ({ default: m.Chat })));
@@ -122,6 +123,7 @@ const P = {
   projects: ["VIEW_PROJECTS", "CREATE_PROJECTS", "EDIT_PROJECTS", "DELETE_PROJECTS", "MANAGE_PROJECTS"],
   interviews: ["VIEW_INTERVIEWS", "MANAGE_INTERVIEWS", "CREATE_INTERVIEWS", "EDIT_INTERVIEWS", "DELETE_INTERVIEWS"],
   offerBanners: ["VIEW_OFFER_BANNERS", "MANAGE_OFFER_BANNERS", "CREATE_OFFER_BANNERS", "EDIT_OFFER_BANNERS", "DELETE_OFFER_BANNERS", "MANAGE_SETTINGS"],
+  clientEmails: ["VIEW_EMAIL_TEMPLATES", "CREATE_EMAIL_TEMPLATES", "EDIT_EMAIL_TEMPLATES", "DELETE_EMAIL_TEMPLATES", "SEND_CLIENT_MAILS", "MANAGE_EMAIL_TEMPLATES"],
   employees: ["VIEW_EMPLOYEES", "MANAGE_EMPLOYEES", "CREATE_EMPLOYEES", "EDIT_EMPLOYEES", "DELETE_EMPLOYEES"],
   chat: ["VIEW_CHAT", "MANAGE_CHAT"],
 };
@@ -174,6 +176,7 @@ export const AppRoutes = () => {
         <Route path="permissions" element={<LazyPage><RoleRoute allowedRoles={["ADMIN"]} permissionsNeeded={["MANAGE_PERMISSIONS"]}><Permissions /></RoleRoute></LazyPage>} />
         <Route path="settings" element={<LazyPage><RoleRoute allowedRoles={["ADMIN", "EMPLOYEE"]} permissionsNeeded={["MANAGE_SETTINGS"]}><SoftwareSettings /></RoleRoute></LazyPage>} />
         <Route path="offer-banners" element={<LazyPage><RoleRoute allowedRoles={["ADMIN", "EMPLOYEE"]} permissionsNeeded={P.offerBanners}><OfferBanners /></RoleRoute></LazyPage>} />
+        <Route path="client-emails" element={<LazyPage><RoleRoute allowedRoles={["ADMIN", "EMPLOYEE"]} permissionsNeeded={P.clientEmails}><ClientEmails /></RoleRoute></LazyPage>} />
 
         <Route path="employees" element={<LazyPage><RoleRoute allowedRoles={["ADMIN", "EMPLOYEE"]} permissionsNeeded={P.employees}><Employees /></RoleRoute></LazyPage>} />
         <Route path="employees/create" element={<LazyPage><RoleRoute allowedRoles={["ADMIN", "EMPLOYEE"]} permissionsNeeded={["CREATE_EMPLOYEES", "MANAGE_EMPLOYEES", "EDIT_EMPLOYEES"]}><EmployeeForm /></RoleRoute></LazyPage>} />

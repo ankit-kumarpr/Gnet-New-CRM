@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 const ExcelJS = require("exceljs");
 const Client = require("../models/Client");
 const Service = require("../models/Service");
@@ -6,9 +7,55 @@ const User = require("../models/User");
 const Project = require("../models/Project");
 const SoftwareSetting = require("../models/SoftwareSetting");
 const generateId = require("../utils/generateId");
+const { generateIds } = generateId;
 const { sendClientWelcome } = require("../utils/mailer");
 const { isInReminderWindow } = require("../utils/clientPaymentReminders");
-const { permissionGranted } = require("../utils/permissions");
+const { permissionGranted, DEFAULT_CLIENT_PERMISSIONS } = require("../utils/permissions");
+
+const CLIENT_BULK_HEADERS = [
+    "Name",
+    "Email",
+    "Phone",
+    "WhatsApp",
+    "Services",
+    "Reporting manager",
+    "Street",
+    "City",
+    "State",
+    "Pincode",
+    "Landmark",
+    "Remark",
+];
+const CLIENT_BULK_MAX = 300;
+
+const canCreateClient = (user) => {
+    if (user?.userType === "ADMIN") return true;
+    return permissionGranted(user, ["CREATE_CLIENTS", "MANAGE_CLIENTS"]);
+};
+
+const cellText = (value) => {
+    if (value == null) return "";
+    if (value instanceof Date) return "";
+    if (typeof value === "number") return String(value);
+    if (typeof value === "object") {
+        if (value.text) return String(value.text).trim();
+        if (value.result != null) return cellText(value.result);
+        if (Array.isArray(value.richText)) return value.richText.map((part) => part.text || "").join("").trim();
+    }
+    return String(value).trim();
+};
+
+const phoneText = (value) => {
+    if (typeof value === "number" && Number.isFinite(value)) return String(Math.trunc(value));
+    return cellText(value).replace(/\D/g, "");
+};
+
+const sendWorkbook = async (res, workbook, filename) => {
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.status(200).send(Buffer.from(buffer));
+};
 
 const seesEveryClient = (user) => user?.userType === "ADMIN" || permissionGranted(user, ["MANAGE_CLIENTS"]);
 
@@ -193,7 +240,6 @@ const createClient = async (req, res, next) => {
         const clientId = await generateId("CLT");
         const plainPassword = clientId;
 
-        const { DEFAULT_CLIENT_PERMISSIONS } = require("../utils/permissions");
         const client = await Client.create({
             name: fields.name,
             email: fields.email,
@@ -664,6 +710,312 @@ const exportClientPayments = async (req, res, next) => {
     }
 };
 
+const downloadClientSample = async (req, res, next) => {
+    try {
+        if (!canCreateClient(req.user)) {
+            return res.status(403).json({ success: false, message: "You cannot add clients" });
+        }
+        const [services, people] = await Promise.all([
+            Service.find().select("name").sort({ name: 1 }).limit(200).lean(),
+            User.find({ status: "ACTIVE", userType: { $in: ["ADMIN", "EMPLOYEE"] } })
+                .select("name")
+                .sort({ name: 1 })
+                .limit(500)
+                .lean(),
+        ]);
+        const serviceName = services[0]?.name || "Service name";
+        const managerName = people.find((p) => String(p._id) === String(req.user._id))?.name
+            || people[0]?.name
+            || req.user.name
+            || "";
+
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet("Clients");
+        sheet.addRow(CLIENT_BULK_HEADERS);
+        sheet.addRow([
+            "Sample Client",
+            "sample.client@email.com",
+            "9999999999",
+            "9999999999",
+            serviceName,
+            managerName,
+            "Street sample",
+            "City",
+            "State",
+            "110001",
+            "",
+            "Replace this row",
+        ]);
+        const header = sheet.getRow(1);
+        header.font = { bold: true, color: { argb: "FFFFFFFF" } };
+        header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF065F46" } };
+        header.alignment = { vertical: "middle" };
+        header.height = 22;
+        sheet.views = [{ state: "frozen", ySplit: 1 }];
+        sheet.autoFilter = { from: "A1", to: "L1" };
+        sheet.columns = CLIENT_BULK_HEADERS.map(() => ({ width: 20 }));
+
+        const notes = workbook.addWorksheet("Notes");
+        notes.getColumn(1).width = 110;
+        [
+            "Delete the sample row on the Clients sheet before you upload.",
+            "Name, Email, Phone, Services, and Reporting manager are required.",
+            "Phone and WhatsApp must be 10 digits. Pincode must be 6 digits if filled.",
+            "Services must already exist. Separate more than one service with a comma.",
+            services.length
+                ? `Services you can use: ${services.map((item) => item.name).join(", ")}.`
+                : "Add a service in the app before uploading clients.",
+            "Reporting manager must match an active Admin/Employee name exactly.",
+            people.length
+                ? `Managers you can use: ${people.map((item) => item.name).join(", ")}.`
+                : "No active managers found.",
+            `You can upload up to ${CLIENT_BULK_MAX} clients in one file.`,
+            "Bulk add is fast: welcome emails are skipped. Login ID and password are the client ID (CLT-######).",
+        ].forEach((line) => notes.addRow([line]));
+
+        await sendWorkbook(res, workbook, "client-sample.xlsx");
+    } catch (error) {
+        next(error);
+    }
+};
+
+const importClients = async (req, res, next) => {
+    try {
+        if (!canCreateClient(req.user)) {
+            return res.status(403).json({ success: false, message: "You cannot add clients" });
+        }
+        if (!req.file?.buffer) {
+            return res.status(400).json({ success: false, message: "Choose an Excel file" });
+        }
+
+        const workbook = new ExcelJS.Workbook();
+        try {
+            await workbook.xlsx.load(req.file.buffer);
+        } catch {
+            return res.status(400).json({
+                success: false,
+                message: "This Excel file could not be read. Download the sample and use that format.",
+            });
+        }
+
+        const sheet = workbook.getWorksheet("Clients") || workbook.worksheets[0];
+        if (!sheet) return res.status(400).json({ success: false, message: "The Excel file has no sheet" });
+
+        const headerRow = sheet.getRow(1);
+        const indexes = {};
+        headerRow.eachCell((cell, index) => {
+            const heading = cellText(cell.value).toLowerCase();
+            if (heading === "name" || heading === "client name") indexes.name = index;
+            if (heading === "email") indexes.email = index;
+            if (["phone", "phone number", "mobile"].includes(heading)) indexes.phone = index;
+            if (["whatsapp", "whatsapp number"].includes(heading)) indexes.whatsapp = index;
+            if (["services", "service"].includes(heading)) indexes.services = index;
+            if (["reporting manager", "manager", "reportingmanager"].includes(heading)) indexes.manager = index;
+            if (heading === "street" || heading === "address") indexes.street = index;
+            if (heading === "city") indexes.city = index;
+            if (heading === "state") indexes.state = index;
+            if (heading === "pincode" || heading === "pin code") indexes.pincode = index;
+            if (heading === "landmark") indexes.landmark = index;
+            if (["remark", "remarks"].includes(heading)) indexes.remark = index;
+        });
+        if (!indexes.name || !indexes.email || !indexes.phone || !indexes.services || !indexes.manager) {
+            return res.status(400).json({
+                success: false,
+                message: "Use the sample file. Name, Email, Phone, Services, and Reporting manager columns are required.",
+            });
+        }
+
+        const [services, people] = await Promise.all([
+            Service.find().select("name").lean(),
+            User.find({ status: "ACTIVE", userType: { $in: ["ADMIN", "EMPLOYEE"] } }).select("name").lean(),
+        ]);
+        const serviceByName = new Map(services.map((item) => [item.name.trim().toLowerCase(), item._id]));
+        const peopleByName = new Map();
+        people.forEach((person) => {
+            const key = person.name.trim().toLowerCase();
+            peopleByName.set(key, (peopleByName.get(key) || []).concat(person));
+        });
+
+        const pending = [];
+        const errors = [];
+        const emailsInFile = new Set();
+        let seen = 0;
+        let overflow = false;
+
+        sheet.eachRow((row, rowNumber) => {
+            if (rowNumber === 1) return;
+            const read = (key) => (indexes[key] ? row.getCell(indexes[key]).value : "");
+            const name = cellText(read("name"));
+            const email = cellText(read("email")).toLowerCase();
+            const phone = phoneText(read("phone"));
+            const whatsapp = phoneText(read("whatsapp"));
+            const serviceCell = cellText(read("services"));
+            const manager = cellText(read("manager"));
+            const street = cellText(read("street"));
+            const city = cellText(read("city"));
+            const state = cellText(read("state"));
+            const pincode = cellText(read("pincode")).replace(/\D/g, "").slice(0, 6);
+            const landmark = cellText(read("landmark"));
+            const remark = cellText(read("remark"));
+
+            if (!name && !email && !phone && !serviceCell && !manager) return;
+            if (name.toLowerCase() === "sample client" && phone === "9999999999") return;
+
+            seen += 1;
+            if (seen > CLIENT_BULK_MAX) {
+                overflow = true;
+                return;
+            }
+
+            const problems = [];
+            if (name.length < 2) problems.push("Name must be at least 2 characters");
+            if (name.length > 120) problems.push("Name is too long");
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) problems.push("Enter a valid email");
+            if (emailsInFile.has(email)) problems.push("This email is repeated in the file");
+            if (!/^[0-9]{10}$/.test(phone)) problems.push("Phone number must be 10 digits");
+            if (whatsapp && !/^[0-9]{10}$/.test(whatsapp)) problems.push("WhatsApp must be 10 digits");
+            if (street.length > 200) problems.push("Street is too long");
+            if (city.length > 80) problems.push("City is too long");
+            if (state.length > 80) problems.push("State is too long");
+            if (landmark.length > 120) problems.push("Landmark is too long");
+            if (remark.length > 2000) problems.push("Remark is too long");
+            if (pincode && !/^[0-9]{6}$/.test(pincode)) problems.push("Pincode must be 6 digits");
+
+            const serviceNames = serviceCell.split(/[,;]/).map((item) => item.trim()).filter(Boolean);
+            const serviceIds = [];
+            if (!serviceNames.length) problems.push("Add at least one service");
+            serviceNames.forEach((serviceName) => {
+                const id = serviceByName.get(serviceName.toLowerCase());
+                if (!id) problems.push(`Service not found: ${serviceName}`);
+                else if (!serviceIds.some((item) => String(item) === String(id))) serviceIds.push(id);
+            });
+
+            let reportingManager = null;
+            if (!manager) problems.push("Reporting manager is required");
+            else {
+                const matches = peopleByName.get(manager.toLowerCase()) || [];
+                if (matches.length === 1) reportingManager = matches[0]._id;
+                else if (matches.length > 1) problems.push(`More than one person is named ${manager}`);
+                else problems.push(`Reporting manager not found: ${manager}`);
+            }
+
+            if (problems.length) {
+                errors.push({ row: rowNumber, message: problems[0] });
+                return;
+            }
+
+            emailsInFile.add(email);
+            pending.push({
+                row: rowNumber,
+                name,
+                email,
+                phone,
+                whatsapp: whatsapp || "",
+                address: { street, city, state, pincode, landmark },
+                remark,
+                services: serviceIds,
+                reportingManager,
+            });
+        });
+
+        if (overflow) {
+            return res.status(400).json({
+                success: false,
+                message: `You can upload up to ${CLIENT_BULK_MAX} clients in one file`,
+            });
+        }
+        if (!pending.length && !errors.length) {
+            return res.status(400).json({
+                success: false,
+                message: "No clients to add. Replace the sample row with your clients.",
+            });
+        }
+
+        if (pending.length) {
+            const existing = await Client.find({ email: { $in: pending.map((item) => item.email) } })
+                .select("email")
+                .lean();
+            const taken = new Set(existing.map((item) => String(item.email || "").toLowerCase()));
+            const unique = [];
+            for (const item of pending) {
+                if (taken.has(item.email)) {
+                    errors.push({ row: item.row, message: "A client with this email already exists" });
+                } else {
+                    unique.push(item);
+                }
+            }
+
+            if (unique.length) {
+                const clientIds = await generateIds("CLT", unique.length);
+                const passwords = await Promise.all(
+                    clientIds.map((id) => bcrypt.hash(id, 10)),
+                );
+                const docs = unique.map((item, index) => ({
+                    name: item.name,
+                    email: item.email,
+                    phone: item.phone,
+                    whatsapp: item.whatsapp,
+                    address: item.address,
+                    remark: item.remark,
+                    services: item.services,
+                    reportingManager: item.reportingManager,
+                    clientId: clientIds[index],
+                    password: passwords[index],
+                    permissions: [...DEFAULT_CLIENT_PERMISSIONS],
+                    createdBy: req.user._id,
+                    payments: [],
+                }));
+
+                await Client.insertMany(docs, { ordered: false });
+
+                try {
+                    const { notify } = require("../utils/notify");
+                    await notify({
+                        type: "CLIENT_NEW",
+                        title: `${docs.length} clients added in bulk`,
+                        body: `Uploaded by ${req.user.name || "user"}`,
+                        href: "/dashboard/clients",
+                        actorId: req.user._id,
+                    });
+                } catch {
+                    // non-blocking
+                }
+            }
+
+            return res.status(201).json({
+                success: true,
+                created: unique.length,
+                failed: errors.length,
+                errors: errors.slice(0, 40),
+                message: unique.length
+                    ? `Added ${unique.length} clients. Login password is each client ID.`
+                    : "No client was added",
+            });
+        }
+
+        res.status(201).json({
+            success: true,
+            created: 0,
+            failed: errors.length,
+            errors: errors.slice(0, 40),
+            message: "No client was added",
+        });
+    } catch (error) {
+        if (error?.writeErrors?.length) {
+            return res.status(201).json({
+                success: true,
+                created: Math.max(0, (error.insertedDocs?.length || 0)),
+                failed: error.writeErrors.length,
+                errors: error.writeErrors.slice(0, 40).map((item) => ({
+                    row: null,
+                    message: item.errmsg || "Could not save this client",
+                })),
+            });
+        }
+        next(error);
+    }
+};
+
 module.exports = {
     createClient,
     getClients,
@@ -673,4 +1025,6 @@ module.exports = {
     updateClientPermissions,
     markClientPaymentPaid,
     exportClientPayments,
+    downloadClientSample,
+    importClients,
 };

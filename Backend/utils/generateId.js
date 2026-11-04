@@ -6,16 +6,32 @@ const Counter = require("../models/Counter");
  * @returns {Promise<string>} The generated ID
  */
 const generateId = async (prefix) => {
-    // findOneAndUpdate with $inc is atomic and safe for concurrent requests
+    const ids = await generateIds(prefix, 1);
+    return ids[0];
+};
+
+/**
+ * Reserves `count` IDs in one atomic counter bump (fast for bulk create).
+ * @param {string} prefix
+ * @param {number} count
+ * @returns {Promise<string[]>}
+ */
+const generateIds = async (prefix, count) => {
+    const n = Math.max(0, Math.floor(Number(count) || 0));
+    if (!n) return [];
     const counter = await Counter.findOneAndUpdate(
         { id: prefix },
-        { $inc: { seq: 1 } },
+        { $inc: { seq: n } },
         { new: true, upsert: true }
     );
-    
-    // Pad the sequence with leading zeros (e.g., 000001)
-    const formattedSeq = counter.seq.toString().padStart(6, '0');
-    return `${prefix}-${formattedSeq}`;
+    const end = counter.seq;
+    const start = end - n + 1;
+    const ids = [];
+    for (let seq = start; seq <= end; seq += 1) {
+        ids.push(`${prefix}-${seq.toString().padStart(6, "0")}`);
+    }
+    return ids;
 };
 
 module.exports = generateId;
+module.exports.generateIds = generateIds;

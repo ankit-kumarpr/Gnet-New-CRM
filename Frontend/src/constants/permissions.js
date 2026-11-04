@@ -198,6 +198,17 @@ export const PERMISSION_GROUPS = [
     ],
   },
   {
+    category: "Client emails",
+    permissions: [
+      { key: "VIEW_EMAIL_TEMPLATES", label: "View email templates", desc: "See saved mail templates" },
+      { key: "CREATE_EMAIL_TEMPLATES", label: "Create email templates", desc: "Add mail templates" },
+      { key: "EDIT_EMAIL_TEMPLATES", label: "Edit email templates", desc: "Update mail templates" },
+      { key: "DELETE_EMAIL_TEMPLATES", label: "Delete email templates", desc: "Remove mail templates" },
+      { key: "SEND_CLIENT_MAILS", label: "Send client mails", desc: "Send template mails to clients" },
+      { key: "MANAGE_EMAIL_TEMPLATES", label: "Manage client emails", desc: "Full template and send access" },
+    ],
+  },
+  {
     category: "System",
     permissions: [
       { key: "MANAGE_PERMISSIONS", label: "Manage permissions", desc: "Grant or revoke permissions" },

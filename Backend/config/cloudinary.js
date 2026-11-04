@@ -132,6 +132,48 @@ const receiveReportFiles = (req, res, next) => {
     });
 };
 
+const mailAttachmentTypes = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/avif",
+    "image/gif",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/plain",
+    "text/csv",
+    "application/zip",
+    "application/x-zip-compressed",
+]);
+
+const uploadMailAttachments = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 8 * 1024 * 1024, files: 8 },
+    fileFilter: (req, file, cb) => {
+        if (!mailAttachmentTypes.has(file.mimetype)) {
+            const error = new Error("Attachment must be PDF, Word, Excel, image, text, CSV, or ZIP");
+            error.status = 400;
+            return cb(error);
+        }
+        cb(null, true);
+    },
+});
+
+const receiveMailAttachments = (req, res, next) => {
+    uploadMailAttachments.array("attachments", 8)(req, res, (error) => {
+        if (!error) return next();
+        const message = error.code === "LIMIT_FILE_SIZE"
+            ? "Each attachment must be 8 MB or smaller"
+            : error.code === "LIMIT_FILE_COUNT"
+                ? "You can add up to 8 attachments"
+                : error.message || "Could not read the attachment";
+        return res.status(400).json({ success: false, message });
+    });
+};
+
 const receiveEmployeeDocuments = (req, res, next) => {
     uploadEmployeeDocuments.array("documents", 8)(req, res, (error) => {
         if (!error) return next();
@@ -422,6 +464,7 @@ module.exports = {
     receiveAttendancePhoto,
     receiveProfilePhoto,
     receiveRingtone,
+    receiveMailAttachments,
     uploadReportFile,
     uploadEmployeeFile,
     uploadUrgentFile,

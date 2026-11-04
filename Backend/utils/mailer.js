@@ -269,4 +269,53 @@ const sendClientWelcome = async ({
     }
 };
 
-module.exports = { sendEmployeeWelcome, sendOfferLetter, sendInterviewRejection, sendClientWelcome };
+const sendClientMail = async ({
+    to,
+    subject,
+    html,
+    text,
+    attachments = [],
+}) => {
+    const missing = missingSmtp();
+    if (missing.length) {
+        return { sent: false, reason: `SMTP is not configured (${missing.join(", ")} missing). Restart the server after saving .env` };
+    }
+    const recipients = Array.isArray(to) ? to : [to];
+    const cleaned = [...new Set(recipients.map((item) => String(item || "").trim().toLowerCase()).filter(Boolean))];
+    if (!cleaned.length) {
+        return { sent: false, reason: "No recipient email" };
+    }
+    if (!String(subject || "").trim()) {
+        return { sent: false, reason: "Subject is required" };
+    }
+    if (!String(html || text || "").trim()) {
+        return { sent: false, reason: "Mail body is required" };
+    }
+
+    try {
+        const transporter = createTransport();
+        await transporter.sendMail({
+            from: process.env.MAIL_FROM || smtpUser(),
+            to: cleaned.join(", "),
+            subject: String(subject).trim(),
+            text: text || String(html || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+            html: html || undefined,
+            attachments: (attachments || []).map((file) => ({
+                filename: file.filename || file.originalname || "attachment",
+                content: file.content || file.buffer,
+                contentType: file.contentType || file.mimetype || undefined,
+            })),
+        });
+        return { sent: true, to: cleaned };
+    } catch (error) {
+        return { sent: false, reason: error.message || "Failed to send mail" };
+    }
+};
+
+module.exports = {
+    sendEmployeeWelcome,
+    sendOfferLetter,
+    sendInterviewRejection,
+    sendClientWelcome,
+    sendClientMail,
+};

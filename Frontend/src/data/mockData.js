@@ -29,6 +29,7 @@ import {
   MessageCircle,
   Image,
   Video,
+  Mail,
 } from "lucide-react";
 
 export const navigationData = [
@@ -107,6 +108,7 @@ export const navigationData = [
     group: "App",
     items: [
       { name: "Offer banners", href: "/dashboard/offer-banners", icon: Image, allowedRoles: ["ADMIN", "EMPLOYEE"], permissionsNeeded: ["VIEW_OFFER_BANNERS", "MANAGE_OFFER_BANNERS", "CREATE_OFFER_BANNERS", "EDIT_OFFER_BANNERS", "DELETE_OFFER_BANNERS", "MANAGE_SETTINGS"] },
+      { name: "Client emails", href: "/dashboard/client-emails", icon: Mail, allowedRoles: ["ADMIN", "EMPLOYEE"], permissionsNeeded: ["VIEW_EMAIL_TEMPLATES", "CREATE_EMAIL_TEMPLATES", "EDIT_EMAIL_TEMPLATES", "DELETE_EMAIL_TEMPLATES", "SEND_CLIENT_MAILS", "MANAGE_EMAIL_TEMPLATES"] },
     ],
   },
   {

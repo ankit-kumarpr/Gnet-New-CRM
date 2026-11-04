@@ -67,6 +67,8 @@ const {
     updateClientPermissions,
     markClientPaymentPaid,
     exportClientPayments,
+    downloadClientSample,
+    importClients,
 } = require("../controllers/client.controller");
 const {
     getPlanDefaults,
@@ -104,7 +106,7 @@ const { getAttendance, punchAttendance, attendanceEmployees } = require("../cont
 const rateLimit = require("express-rate-limit");
 const { registerValidator } = require("../validators/auth.validator");
 const validate = require("../middlewares/validate.middleware");
-const { receiveEmployeeDocuments, receiveLeaveDocument, receiveTicketFile, receiveResume, receiveLogo, receiveOfferBannerImage, receiveLeadSheet, receiveAttendancePhoto, receiveRingtone } = require("../config/cloudinary");
+const { receiveEmployeeDocuments, receiveLeaveDocument, receiveTicketFile, receiveResume, receiveLogo, receiveOfferBannerImage, receiveLeadSheet, receiveAttendancePhoto, receiveRingtone, receiveMailAttachments } = require("../config/cloudinary");
 const {
     listOfferBanners,
     getOfferBannerById,
@@ -113,6 +115,15 @@ const {
     changeOfferBannerStatus,
     deleteOfferBanner,
 } = require("../controllers/offerBanner.controller");
+const {
+    listEmailTemplates,
+    getEmailTemplateById,
+    createEmailTemplate,
+    updateEmailTemplate,
+    deleteEmailTemplate,
+    listMailRecipients,
+    sendClientMails,
+} = require("../controllers/emailTemplate.controller");
 const punchLimiter = rateLimit({
     windowMs: 10 * 60 * 1000,
     max: 10,
@@ -275,6 +286,8 @@ router.patch("/services/update/:id", updateService);
 router.delete("/services/:id", deleteService);
 
 router.post("/clients/create", createClient);
+router.get("/clients/sample", downloadClientSample);
+router.post("/clients/import", receiveLeadSheet, importClients);
 router.get("/clients/list", getClients);
 router.get("/clients/payments/export", exportClientPayments);
 router.get("/clients/details/:id", getClientById);
@@ -400,5 +413,13 @@ router.patch("/offer-banners/status/:id", checkPermission("MANAGE_OFFER_BANNERS"
 router.get("/offer-banners/:id", checkPermission("MANAGE_OFFER_BANNERS", "MANAGE_SETTINGS", "VIEW_OFFER_BANNERS"), getOfferBannerById);
 router.patch("/offer-banners/:id", checkPermission("MANAGE_OFFER_BANNERS", "MANAGE_SETTINGS", "EDIT_OFFER_BANNERS"), receiveOfferBannerImage, updateOfferBanner);
 router.delete("/offer-banners/:id", checkPermission("MANAGE_OFFER_BANNERS", "MANAGE_SETTINGS", "DELETE_OFFER_BANNERS"), deleteOfferBanner);
+
+router.get("/email-templates", checkPermission("VIEW_EMAIL_TEMPLATES", "MANAGE_EMAIL_TEMPLATES", "SEND_CLIENT_MAILS"), listEmailTemplates);
+router.post("/email-templates", checkPermission("CREATE_EMAIL_TEMPLATES", "MANAGE_EMAIL_TEMPLATES"), createEmailTemplate);
+router.get("/email-templates/recipients", checkPermission("SEND_CLIENT_MAILS", "MANAGE_EMAIL_TEMPLATES", "VIEW_EMAIL_TEMPLATES"), listMailRecipients);
+router.post("/email-templates/send", checkPermission("SEND_CLIENT_MAILS", "MANAGE_EMAIL_TEMPLATES"), receiveMailAttachments, sendClientMails);
+router.get("/email-templates/:id", checkPermission("VIEW_EMAIL_TEMPLATES", "MANAGE_EMAIL_TEMPLATES", "SEND_CLIENT_MAILS"), getEmailTemplateById);
+router.patch("/email-templates/:id", checkPermission("EDIT_EMAIL_TEMPLATES", "MANAGE_EMAIL_TEMPLATES"), updateEmailTemplate);
+router.delete("/email-templates/:id", checkPermission("DELETE_EMAIL_TEMPLATES", "MANAGE_EMAIL_TEMPLATES"), deleteEmailTemplate);
 
 module.exports = router;
