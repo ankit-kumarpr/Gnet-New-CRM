@@ -242,16 +242,8 @@ export function Clients() {
       toast.error("Pincode must be 6 digits");
       return;
     }
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      toast.error("Valid email is required for client login mail");
-      return;
-    }
-    if (!form.reportingManager) {
-      toast.error("Select a reporting manager");
-      return;
-    }
-    if (!form.services.length) {
-      toast.error("Select at least one service");
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      toast.error("Enter a valid email");
       return;
     }
     for (const row of form.payments) {
@@ -484,9 +476,9 @@ export function Clients() {
               <Input value={form.name} maxLength={120} onChange={(event) => setField("name", event.target.value)} disabled={saving} />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Email *</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
               <Input type="email" value={form.email} onChange={(event) => setField("email", event.target.value)} disabled={saving} placeholder="client@email.com" />
-              <p className="mt-1 text-xs text-slate-500">Login details mail isi email par jayegi.</p>
+              <p className="mt-1 text-xs text-slate-500">Optional — dilaye to login mail isi email par jayegi.</p>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Phone number *</label>
@@ -497,7 +489,7 @@ export function Clients() {
               <Input inputMode="numeric" maxLength={10} value={form.whatsapp} onChange={(event) => setField("whatsapp", digits(event.target.value, 10))} disabled={saving} />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Reporting manager *</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Reporting manager</label>
               <EmployeeSelect
                 value={form.reportingManager}
                 onChange={(next) => setField("reportingManager", next)}
@@ -596,7 +588,7 @@ export function Clients() {
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-medium text-slate-700">Services *</p>
+            <p className="mb-2 text-sm font-medium text-slate-700">Services</p>
             {serviceOptions.length === 0 ? (
               <p className="text-sm text-slate-500">Add a service first.</p>
             ) : (

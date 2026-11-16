@@ -24,7 +24,7 @@ export const LoginForm = () => {
     const newErrors = { identifier: "", password: "", general: "" };
 
     if (!formData.identifier.trim()) {
-      newErrors.identifier = "Enter email or Client ID.";
+      newErrors.identifier = "Enter email, phone, or Client ID.";
       valid = false;
     }
 
@@ -94,7 +94,7 @@ export const LoginForm = () => {
           Welcome back
         </h1>
         <p className="mt-2 text-[15px] leading-relaxed text-slate-500">
-          Enter your email or Client ID to continue to {companyName}.
+          Enter your email or phone number to continue to {companyName}.
         </p>
       </div>
 
@@ -110,11 +110,11 @@ export const LoginForm = () => {
 
         <div className="space-y-4">
           <AuthInput
-            label="Email or Client ID"
+            label="Email or phone"
             name="identifier"
             type="text"
             inputMode="text"
-            placeholder="you@company.com or Client ID"
+            placeholder="you@company.com or 10-digit phone"
             icon={UserRound}
             value={formData.identifier}
             onChange={handleChange}

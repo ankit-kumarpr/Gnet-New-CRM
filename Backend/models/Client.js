@@ -38,6 +38,7 @@ const clientSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true,
+        unique: true,
     },
     whatsapp: {
         type: String,
@@ -101,7 +102,6 @@ const clientSchema = new mongoose.Schema({
 clientSchema.index({ createdAt: -1 });
 clientSchema.index({ reportingManager: 1 });
 clientSchema.index({ name: 1 });
-clientSchema.index({ phone: 1 });
 clientSchema.index({ "payments.date": 1 });
 
 clientSchema.pre("save", async function () {

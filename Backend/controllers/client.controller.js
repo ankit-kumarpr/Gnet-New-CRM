@@ -111,7 +111,8 @@ const readEmail = (value, { required = false } = {}) => {
 
 const readReportingManager = async (value) => {
     const id = String(value || "").trim();
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) fail("Select a reporting manager");
+    if (!id) return null;
+    if (!mongoose.Types.ObjectId.isValid(id)) fail("Select a valid reporting manager");
     const user = await User.findOne({
         _id: id,
         status: "ACTIVE",
@@ -141,9 +142,9 @@ const readAddress = (value) => {
 };
 
 const readServices = async (value) => {
-    if (!Array.isArray(value) || value.length === 0) fail("Select at least one service");
+    if (!Array.isArray(value) || value.length === 0) return [];
     const ids = [...new Set(value.map((id) => String(id || "").trim()).filter(Boolean))];
-    if (!ids.length) fail("Select at least one service");
+    if (!ids.length) return [];
     if (ids.some((id) => !mongoose.Types.ObjectId.isValid(id))) fail("Invalid service selected");
     const found = await Service.countDocuments({ _id: { $in: ids } });
     if (found !== ids.length) fail("One or more services were not found");
@@ -228,21 +229,46 @@ const readClient = async (body, { requireEmail = false, existingPayments = [] } 
         address: readAddress(body.address),
         remark: readText(body.remark, 2000, "Remark"),
         services: await readServices(body.services),
-        reportingManager: manager._id,
-        reportingManagerName: manager.name,
+        reportingManager: manager?._id || null,
+        reportingManagerName: manager?.name || "",
         payments: readPayments(body, existingPayments),
     };
 };
 
+const assertUniqueClientContacts = async ({ email, phone, excludeId = null }) => {
+    const phoneClash = await Client.findOne({
+        phone,
+        ...(excludeId ? { _id: { $ne: excludeId } } : {}),
+    }).select("_id").lean();
+    if (phoneClash) {
+        const error = new Error("A client with this phone number already exists");
+        error.status = 409;
+        throw error;
+    }
+
+    if (email) {
+        const emailClash = await Client.findOne({
+            email,
+            ...(excludeId ? { _id: { $ne: excludeId } } : {}),
+        }).select("_id").lean();
+        if (emailClash) {
+            const error = new Error("A client with this email already exists");
+            error.status = 409;
+            throw error;
+        }
+    }
+};
+
 const createClient = async (req, res, next) => {
     try {
-        const fields = await readClient(req.body, { requireEmail: true });
+        const fields = await readClient(req.body, { requireEmail: false });
+        await assertUniqueClientContacts({ email: fields.email, phone: fields.phone });
         const clientId = await generateId("CLT");
         const plainPassword = clientId;
 
         const client = await Client.create({
             name: fields.name,
-            email: fields.email,
+            email: fields.email || undefined,
             phone: fields.phone,
             whatsapp: fields.whatsapp,
             address: fields.address,
@@ -256,19 +282,21 @@ const createClient = async (req, res, next) => {
             createdBy: req.user._id,
         });
 
-        const setting = await SoftwareSetting.findOne({ key: "software" }).select("companyName").lean();
-        let mail = { sent: false };
-        try {
-            mail = await sendClientWelcome({
-                name: client.name,
-                email: client.email,
-                clientId,
-                password: plainPassword,
-                companyName: setting?.companyName || "",
-                reportingManagerName: fields.reportingManagerName,
-            });
-        } catch (mailError) {
-            mail = { sent: false, reason: mailError.message };
+        let mail = { sent: false, reason: "No email on client" };
+        if (client.email) {
+            const setting = await SoftwareSetting.findOne({ key: "software" }).select("companyName").lean();
+            try {
+                mail = await sendClientWelcome({
+                    name: client.name,
+                    email: client.email,
+                    clientId,
+                    password: plainPassword,
+                    companyName: setting?.companyName || "",
+                    reportingManagerName: fields.reportingManagerName,
+                });
+            } catch (mailError) {
+                mail = { sent: false, reason: mailError.message };
+            }
         }
 
         const { notify } = require("../utils/notify");
@@ -278,7 +306,7 @@ const createClient = async (req, res, next) => {
             body: `${client.clientId} · ${client.email || client.phone}`,
             href: `/dashboard/clients/${client._id}`,
             actorId: req.user._id,
-            extraUserIds: [fields.reportingManager],
+            extraUserIds: fields.reportingManager ? [fields.reportingManager] : [],
         });
 
         const data = await Client.findById(client._id)
@@ -295,7 +323,8 @@ const createClient = async (req, res, next) => {
         });
     } catch (error) {
         if (error.code === 11000) {
-            return res.status(409).json({ success: false, message: "A client with this email or ID already exists" });
+            const field = error.keyPattern?.phone ? "phone number" : error.keyPattern?.email ? "email" : "email, phone, or ID";
+            return res.status(409).json({ success: false, message: `A client with this ${field} already exists` });
         }
         if (error.status) {
             return res.status(error.status).json({ success: false, message: error.message });
@@ -461,11 +490,16 @@ const updateClient = async (req, res, next) => {
         }
 
         const fields = await readClient(req.body, {
-            requireEmail: true,
+            requireEmail: false,
             existingPayments: client.payments || [],
         });
+        await assertUniqueClientContacts({
+            email: fields.email,
+            phone: fields.phone,
+            excludeId: client._id,
+        });
         client.name = fields.name;
-        client.email = fields.email;
+        client.email = fields.email || null;
         client.phone = fields.phone;
         client.whatsapp = fields.whatsapp;
         client.address = fields.address;
@@ -482,7 +516,8 @@ const updateClient = async (req, res, next) => {
         res.status(200).json({ success: true, data });
     } catch (error) {
         if (error.code === 11000) {
-            return res.status(409).json({ success: false, message: "A client with this email already exists" });
+            const field = error.keyPattern?.phone ? "phone number" : error.keyPattern?.email ? "email" : "email or phone";
+            return res.status(409).json({ success: false, message: `A client with this ${field} already exists` });
         }
         if (error.status) {
             return res.status(error.status).json({ success: false, message: error.message });
@@ -759,18 +794,19 @@ const downloadClientSample = async (req, res, next) => {
         notes.getColumn(1).width = 110;
         [
             "Delete the sample row on the Clients sheet before you upload.",
-            "Name, Email, Phone, Services, and Reporting manager are required.",
-            "Phone and WhatsApp must be 10 digits. Pincode must be 6 digits if filled.",
+            "Only Name and Phone are required. Email, services, and reporting manager are optional.",
+            "Phone must be unique and 10 digits. Email must be unique if filled.",
+            "WhatsApp must be 10 digits if filled. Pincode must be 6 digits if filled.",
             "Services must already exist. Separate more than one service with a comma.",
             services.length
                 ? `Services you can use: ${services.map((item) => item.name).join(", ")}.`
                 : "Add a service in the app before uploading clients.",
-            "Reporting manager must match an active Admin/Employee name exactly.",
+            "Reporting manager must match an active Admin/Employee name exactly if filled.",
             people.length
                 ? `Managers you can use: ${people.map((item) => item.name).join(", ")}.`
                 : "No active managers found.",
             `You can upload up to ${CLIENT_BULK_MAX} clients in one file.`,
-            "Bulk add is fast: welcome emails are skipped. Login ID and password are the client ID (CLT-######).",
+            "Login works with email or phone + password (default password is Client ID CLT-######).",
         ].forEach((line) => notes.addRow([line]));
 
         await sendWorkbook(res, workbook, "client-sample.xlsx");
@@ -818,10 +854,10 @@ const importClients = async (req, res, next) => {
             if (heading === "landmark") indexes.landmark = index;
             if (["remark", "remarks"].includes(heading)) indexes.remark = index;
         });
-        if (!indexes.name || !indexes.email || !indexes.phone || !indexes.services || !indexes.manager) {
+        if (!indexes.name || !indexes.phone) {
             return res.status(400).json({
                 success: false,
-                message: "Use the sample file. Name, Email, Phone, Services, and Reporting manager columns are required.",
+                message: "Use the sample file. Name and Phone columns are required.",
             });
         }
 
@@ -839,6 +875,7 @@ const importClients = async (req, res, next) => {
         const pending = [];
         const errors = [];
         const emailsInFile = new Set();
+        const phonesInFile = new Set();
         let seen = 0;
         let overflow = false;
 
@@ -870,9 +907,10 @@ const importClients = async (req, res, next) => {
             const problems = [];
             if (name.length < 2) problems.push("Name must be at least 2 characters");
             if (name.length > 120) problems.push("Name is too long");
-            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) problems.push("Enter a valid email");
-            if (emailsInFile.has(email)) problems.push("This email is repeated in the file");
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) problems.push("Enter a valid email");
+            if (email && emailsInFile.has(email)) problems.push("This email is repeated in the file");
             if (!/^[0-9]{10}$/.test(phone)) problems.push("Phone number must be 10 digits");
+            if (phonesInFile.has(phone)) problems.push("This phone number is repeated in the file");
             if (whatsapp && !/^[0-9]{10}$/.test(whatsapp)) problems.push("WhatsApp must be 10 digits");
             if (street.length > 200) problems.push("Street is too long");
             if (city.length > 80) problems.push("City is too long");
@@ -883,7 +921,6 @@ const importClients = async (req, res, next) => {
 
             const serviceNames = serviceCell.split(/[,;]/).map((item) => item.trim()).filter(Boolean);
             const serviceIds = [];
-            if (!serviceNames.length) problems.push("Add at least one service");
             serviceNames.forEach((serviceName) => {
                 const id = serviceByName.get(serviceName.toLowerCase());
                 if (!id) problems.push(`Service not found: ${serviceName}`);
@@ -891,8 +928,7 @@ const importClients = async (req, res, next) => {
             });
 
             let reportingManager = null;
-            if (!manager) problems.push("Reporting manager is required");
-            else {
+            if (manager) {
                 const matches = peopleByName.get(manager.toLowerCase()) || [];
                 if (matches.length === 1) reportingManager = matches[0]._id;
                 else if (matches.length > 1) problems.push(`More than one person is named ${manager}`);
@@ -904,11 +940,12 @@ const importClients = async (req, res, next) => {
                 return;
             }
 
-            emailsInFile.add(email);
+            if (email) emailsInFile.add(email);
+            phonesInFile.add(phone);
             pending.push({
                 row: rowNumber,
                 name,
-                email,
+                email: email || undefined,
                 phone,
                 whatsapp: whatsapp || "",
                 address: { street, city, state, pincode, landmark },
@@ -932,14 +969,22 @@ const importClients = async (req, res, next) => {
         }
 
         if (pending.length) {
-            const existing = await Client.find({ email: { $in: pending.map((item) => item.email) } })
-                .select("email")
-                .lean();
-            const taken = new Set(existing.map((item) => String(item.email || "").toLowerCase()));
+            const emails = pending.map((item) => item.email).filter(Boolean);
+            const phones = pending.map((item) => item.phone);
+            const existing = await Client.find({
+                $or: [
+                    ...(emails.length ? [{ email: { $in: emails } }] : []),
+                    { phone: { $in: phones } },
+                ],
+            }).select("email phone").lean();
+            const takenEmails = new Set(existing.map((item) => String(item.email || "").toLowerCase()).filter(Boolean));
+            const takenPhones = new Set(existing.map((item) => String(item.phone || "")).filter(Boolean));
             const unique = [];
             for (const item of pending) {
-                if (taken.has(item.email)) {
+                if (item.email && takenEmails.has(item.email)) {
                     errors.push({ row: item.row, message: "A client with this email already exists" });
+                } else if (takenPhones.has(item.phone)) {
+                    errors.push({ row: item.row, message: "A client with this phone number already exists" });
                 } else {
                     unique.push(item);
                 }

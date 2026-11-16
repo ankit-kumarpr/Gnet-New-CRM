@@ -85,84 +85,105 @@ const issueClientSession = async (client, res) => {
     });
 };
 
-// @desc    Login staff (email) or client (Client ID) — same endpoint
+const populateStaff = (query) =>
+    query
+        .populate("department", "name")
+        .populate("designation", "name")
+        .populate("employeeType", "name")
+        .populate("workMode", "name");
+
+const issueStaffSession = async (user, res) => {
+    if (user.status === "BLOCKED") {
+        return res.status(403).json({ success: false, message: "Account is blocked. Contact support." });
+    }
+    if (user.status === "INACTIVE") {
+        return res.status(403).json({ success: false, message: "Account is not active. Contact support." });
+    }
+
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+    user.refreshToken = refreshToken;
+    await user.save();
+    setRefreshCookie(res, refreshToken);
+
+    return res.status(200).json({
+        success: true,
+        message: "Login successful",
+        data: {
+            accessToken,
+            refreshToken,
+            user: {
+                id: user._id,
+                userType: user.userType,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                avatarUrl: user.avatar?.url || "",
+                avatar: user.avatar || { url: "", publicId: "" },
+                ...(user.employeeId && { employeeId: user.employeeId }),
+                ...(user.department && { department: user.department }),
+                ...(user.designation && { designation: user.designation }),
+                ...(user.employeeType && { employeeType: user.employeeType }),
+                ...(user.workMode && { workMode: user.workMode }),
+                permissions: resolveEmployeePermissions(user),
+            },
+        },
+    });
+};
+
+// @desc    Login staff/client with email OR phone (client may also use Client ID)
 // @route   POST /api/v1/auth/login
 // @access  Public
 const login = async (req, res, next) => {
     try {
-        const identifier = String(req.body.email || req.body.clientId || "").trim();
+        const identifier = String(req.body.email || req.body.phone || req.body.clientId || "").trim();
         const password = String(req.body.password || "").trim();
         if (!identifier || !password) {
-            return res.status(400).json({ success: false, message: "Email/Client ID and password are required" });
+            return res.status(400).json({ success: false, message: "Email/phone and password are required" });
         }
 
-        const looksLikeEmail = identifier.includes("@");
-        if (looksLikeEmail) {
-            const user = await User.findOne({ email: identifier.toLowerCase() })
-                .populate("department", "name")
-                .populate("designation", "name")
-                .populate("employeeType", "name")
-                .populate("workMode", "name");
+        const isEmail = identifier.includes("@");
+        const phoneDigits = identifier.replace(/\D/g, "");
+        const isPhone = !isEmail && /^[0-9]{10}$/.test(phoneDigits);
 
-            if (user) {
-                if (user.status === "BLOCKED") {
-                    return res.status(403).json({ success: false, message: "Account is blocked. Contact support." });
-                }
-                if (user.status === "INACTIVE") {
-                    return res.status(403).json({ success: false, message: "Account is not active. Contact support." });
-                }
-
-                const isMatch = await user.matchPassword(password);
-                if (!isMatch) {
-                    return res.status(401).json({ success: false, message: "Invalid email or password" });
-                }
-
-                const accessToken = generateAccessToken(user._id);
-                const refreshToken = generateRefreshToken(user._id);
-                user.refreshToken = refreshToken;
-                await user.save();
-
-                setRefreshCookie(res, refreshToken);
-
-                return res.status(200).json({
-                    success: true,
-                    message: "Login successful",
-                    data: {
-                        accessToken,
-                        refreshToken,
-                        user: {
-                            id: user._id,
-                            userType: user.userType,
-                            name: user.name,
-                            email: user.email,
-                            phone: user.phone,
-                            avatarUrl: user.avatar?.url || "",
-                            avatar: user.avatar || { url: "", publicId: "" },
-                            ...(user.employeeId && { employeeId: user.employeeId }),
-                            ...(user.department && { department: user.department }),
-                            ...(user.designation && { designation: user.designation }),
-                            ...(user.employeeType && { employeeType: user.employeeType }),
-                            ...(user.workMode && { workMode: user.workMode }),
-                            permissions: resolveEmployeePermissions(user),
-                        },
-                    },
-                });
+        // Staff: email or phone
+        let staff = null;
+        if (isEmail) {
+            staff = await populateStaff(User.findOne({ email: identifier.toLowerCase() }));
+        } else if (isPhone) {
+            staff = await populateStaff(User.findOne({ phone: phoneDigits }));
+        }
+        if (staff) {
+            const isMatch = await staff.matchPassword(password);
+            if (!isMatch) {
+                return res.status(401).json({ success: false, message: "Invalid login or password" });
             }
+            return issueStaffSession(staff, res);
         }
 
-        const clientId = identifier.toUpperCase();
-        const client = await Client.findOne({ clientId }).select("+password +refreshToken")
-            .populate("reportingManager", "name");
+        // Client: email, phone, or Client ID
+        let client = null;
+        if (isEmail) {
+            client = await Client.findOne({ email: identifier.toLowerCase() })
+                .select("+password +refreshToken")
+                .populate("reportingManager", "name");
+        } else if (isPhone) {
+            client = await Client.findOne({ phone: phoneDigits })
+                .select("+password +refreshToken")
+                .populate("reportingManager", "name");
+        }
         if (!client) {
-            return res.status(401).json({
-                success: false,
-                message: looksLikeEmail ? "Invalid email or password" : "Invalid Client ID or password",
-            });
+            client = await Client.findOne({ clientId: identifier.toUpperCase() })
+                .select("+password +refreshToken")
+                .populate("reportingManager", "name");
+        }
+        if (!client) {
+            return res.status(401).json({ success: false, message: "Invalid login or password" });
         }
 
         const isMatch = await client.matchPassword(password);
         if (!isMatch) {
-            return res.status(401).json({ success: false, message: "Invalid Client ID or password" });
+            return res.status(401).json({ success: false, message: "Invalid login or password" });
         }
 
         return issueClientSession(client, res);
