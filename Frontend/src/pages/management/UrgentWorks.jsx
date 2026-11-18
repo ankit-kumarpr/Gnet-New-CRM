@@ -12,7 +12,7 @@ import { useAuth } from "../../context/AuthContext";
 import { WORK_PRIORITIES, formatDate, toDateInput, workPriorityClass, workPriorityLabel } from "./urgentWorkOptions";
 import { cn } from "../../utils/cn";
 
-const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 
 const emptyForm = { project: "", work: "", assignees: [], priority: "MEDIUM", eod: "", file: null, removeFile: false };
 
@@ -98,20 +98,37 @@ export function UrgentWorks() {
     setShowForm(true);
   };
 
-  const openEdit = (row) => {
-    setSelected(row);
+  const openEdit = async (row) => {
+    if (!row?._id) return;
+    let data = row;
+    try {
+      const res = await api.get(`/admin/urgent-works/details/${row._id}`);
+      data = res.data.data || row;
+      if (data && data.canEdit === false) {
+        toast.error("You can only edit urgent work you created");
+        return;
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to open urgent work for edit");
+    }
+    setSelected(data);
     setMemberSearch("");
     setPickerOpen(false);
     setForm({
-      project: row.project?._id || "",
-      work: row.work || "",
-      assignees: (row.assignees || []).map((person) => person._id),
-      priority: row.priority || "MEDIUM",
-      eod: toDateInput(row.eod),
+      project: String(data.project?._id || data.project || ""),
+      work: data.work || "",
+      assignees: (data.assignees || [])
+        .map((person) => String(person?._id || person || ""))
+        .filter(Boolean),
+      priority: data.priority || "MEDIUM",
+      eod: toDateInput(data.eod),
       file: null,
       removeFile: false,
     });
     setShowForm(true);
+    window.setTimeout(() => {
+      document.getElementById("urgent-edit-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   };
 
   useEffect(() => {
@@ -231,7 +248,7 @@ export function UrgentWorks() {
       </div>
 
       {showForm && (
-        <form onSubmit={save} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <form id="urgent-edit-form" onSubmit={save} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">{selected ? "Edit urgent work" : "Add urgent work"}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
@@ -263,9 +280,9 @@ export function UrgentWorks() {
                 {form.assignees.length === 0 ? (
                   <span className="text-slate-400">Select employees</span>
                 ) : options.filter((person) => form.assignees.includes(person._id)).map((person) => (
-                  <span key={person._id} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800">
+                  <span key={person._id} className="inline-flex items-center gap-1 rounded-full bg-[#EAF1FA] px-2 py-0.5 text-xs font-medium text-[#1E416B]">
                     {person.name}
-                    <button type="button" aria-label={`Remove ${person.name}`} disabled={saving} onClick={(event) => { event.stopPropagation(); toggleEmployee(person._id); }} className="rounded-full text-emerald-500 hover:text-emerald-800">
+                    <button type="button" aria-label={`Remove ${person.name}`} disabled={saving} onClick={(event) => { event.stopPropagation(); toggleEmployee(person._id); }} className="rounded-full text-[#3569A8] hover:text-[#1E416B]">
                       <X className="h-3 w-3" />
                     </button>
                   </span>
@@ -347,14 +364,14 @@ export function UrgentWorks() {
               ) : rows.map((row) => (
                 <tr key={row._id} className="hover:bg-slate-50">
                   <td className="px-4 py-3 text-sm">
-                    <button type="button" className="text-left font-medium text-slate-900 hover:text-emerald-700" onClick={() => navigate(`/dashboard/urgent-work/${row._id}`)}>{row.project?.name || "—"}</button>
+                    <button type="button" className="text-left font-medium text-slate-900 hover:text-[#3569A8]" onClick={() => navigate(`/dashboard/urgent-work/${row._id}`)}>{row.project?.name || "—"}</button>
                   </td>
                   <td className="max-w-xs px-4 py-3 text-sm text-slate-600">{excerpt(row.work) || "—"}</td>
                   <td className="px-4 py-3"><span className={cn("inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium", workPriorityClass(row.priority))}>{workPriorityLabel(row.priority)}</span></td>
                   <td className="px-4 py-3">
                     <span className={cn(
                       "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium",
-                      row.status === "DONE" ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700",
+                      row.status === "DONE" ? "bg-[#16A36A]/12 text-[#1E416B]" : "bg-slate-100 text-slate-700",
                     )}>
                       {row.status === "DONE" ? "Done" : "Pending"}
                     </span>

@@ -24,7 +24,7 @@ export const AuthInput = React.forwardRef(
             ref={ref}
             id={props.id || props.name}
             className={cn(
-              "h-12 rounded-xl border-slate-200/90 bg-white shadow-sm transition-all duration-200 placeholder:text-slate-400 focus-visible:border-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-600/25",
+              "h-12 rounded-[10px] border-[#E5EAF1] bg-white shadow-sm transition-all duration-200 placeholder:text-[#94A3B8] focus-visible:border-[#3569A8] focus-visible:ring-2 focus-visible:ring-[#3569A8]/25",
               Icon && "pl-10",
               error && "border-rose-400 focus-visible:border-rose-400 focus-visible:ring-rose-500/25"
             )}

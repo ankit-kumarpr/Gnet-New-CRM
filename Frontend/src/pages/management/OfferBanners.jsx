@@ -172,7 +172,7 @@ export function OfferBanners() {
           />
         </div>
         <select
-          className="h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600"
+          className="h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]"
           value={statusFilter}
           onChange={(event) => {
             setStatusFilter(event.target.value);
@@ -213,7 +213,7 @@ export function OfferBanners() {
                         {row.imageUrl ? (
                           <img src={row.imageUrl} alt="" className="h-12 w-20 rounded-md object-cover" />
                         ) : (
-                          <div className="flex h-12 w-20 items-center justify-center rounded-md bg-emerald-50 text-emerald-700">
+                          <div className="flex h-12 w-20 items-center justify-center rounded-md bg-[#EAF1FA] text-[#3569A8]">
                             <ImagePlus className="h-5 w-5" />
                           </div>
                         )}
@@ -228,7 +228,7 @@ export function OfferBanners() {
                       <span
                         className={cn(
                           "inline-flex rounded-full px-2 py-0.5 text-xs font-semibold",
-                          row.status === "ACTIVE" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600",
+                          row.status === "ACTIVE" ? "bg-[#EAF1FA] text-[#3569A8]" : "bg-slate-100 text-slate-600",
                         )}
                       >
                         {row.status}

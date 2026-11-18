@@ -9,7 +9,7 @@ import api from "../../services/api";
 import { LEAD_SOURCES, LEAD_STATUSES, formatDateTime, formatMoney, leadLabel, statusClass } from "./leadOptions";
 import { cn } from "../../utils/cn";
 
-const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 
 const copy = {
   sale: {
@@ -94,7 +94,7 @@ export function DealList({ mode }) {
       </div>
 
       {mode === "revenue" && (
-        <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">
           <p className="text-sm text-slate-500">Total revenue</p>
           <p className="mt-1 text-3xl font-semibold text-slate-900">{formatMoney(totalAmount)}</p>
           <p className="mt-1 text-sm text-slate-500">{total} payment{total === 1 ? "" : "s"} in this filter</p>
@@ -163,7 +163,7 @@ export function DealList({ mode }) {
               ) : rows.map((row) => (
                 <tr key={row._id} className="hover:bg-slate-50">
                   <td className="px-4 py-3 text-sm">
-                    <button type="button" className="text-left font-medium text-slate-900 hover:text-emerald-700" onClick={() => navigate(`/dashboard/leads/${row._id}`)}>{row.name}</button>
+                    <button type="button" className="text-left font-medium text-slate-900 hover:text-[#3569A8]" onClick={() => navigate(`/dashboard/leads/${row._id}`)}>{row.name}</button>
                     {row.companyName && <div className="text-slate-500">{row.companyName}</div>}
                     <span className={cn("mt-1 inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium", statusClass(row.status))}>{leadLabel(LEAD_STATUSES, row.status)}</span>
                     {row.remark && <p className="mt-1 max-w-xs text-xs text-slate-500">{row.remark}</p>}

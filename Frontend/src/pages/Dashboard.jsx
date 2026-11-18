@@ -43,7 +43,7 @@ function Sparkline({ points }) {
   const step = points.length === 1 ? 0 : width / (points.length - 1);
   const path = points.map((value, index) => `${index === 0 ? "M" : "L"} ${index * step} ${height - (value / max) * (height - 2) - 1}`).join(" ");
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="mt-3 h-7 w-24 text-emerald-700" aria-hidden="true">
+    <svg viewBox={`0 0 ${width} ${height}`} className="mt-3 h-7 w-24 text-[#3569A8]" aria-hidden="true">
       <path d={path} fill="none" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   );
@@ -54,14 +54,14 @@ function Kpi({ label, value, hint, href, icon: Icon, spark }) {
     <>
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
-        <Icon className="h-4 w-4 shrink-0 text-emerald-700" />
+        <Icon className="h-4 w-4 shrink-0 text-[#3569A8]" />
       </div>
-      <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">{value}</p>
-      {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+      <p className="mt-3 text-2xl font-semibold tracking-tight text-[#26364A]">{value}</p>
+      {hint && <p className="mt-1 text-xs text-[#718096]">{hint}</p>}
       {spark}
     </>
   );
-  const className = "block rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm transition hover:border-emerald-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-700";
+  const className = "block rounded-[10px] border border-[#E5EAF1] bg-white px-4 py-4 shadow-sm transition hover:border-[#3569A8]/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#3569A8]";
   if (!href) return <div className={className}>{body}</div>;
   return <Link to={href} className={className}>{body}</Link>;
 }
@@ -141,9 +141,9 @@ export function Dashboard() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Dashboard{company ? ` · ${company}` : ""}</p>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">{greeting()}, {user?.name || "there"}</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="text-xs font-medium uppercase tracking-wide text-[#94A3B8]">Dashboard{company ? ` · ${company}` : ""}</p>
+          <h1 className="mt-1 text-xl font-semibold tracking-tight text-[#26364A] sm:text-2xl">{greeting()}, {user?.name || "there"}</h1>
+          <p className="mt-1 text-sm text-[#718096]">
             {data?.staff ? "Here's your workforce overview for today." : "Here's what needs attention today."}
             {data?.dateLabel ? ` ${data.dateLabel}.` : ""}
           </p>
@@ -152,7 +152,7 @@ export function Dashboard() {
           type="button"
           onClick={() => load(true)}
           disabled={loading || refreshing}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-700 disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-[6px] border border-[#E5EAF1] bg-white px-3 py-2 text-sm font-medium text-[#26364A] shadow-sm hover:bg-[#EAF1FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#3569A8] disabled:opacity-60"
         >
           <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
           Refresh
@@ -175,33 +175,33 @@ export function Dashboard() {
       {data && (
         <>
           {todayWork && (
-            <section className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+            <section className="rounded-[10px] border border-[#E5EAF1] bg-white p-5 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-sm font-semibold text-slate-900">Today&apos;s work progress</h2>
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <h2 className="text-sm font-semibold text-[#26364A]">Today&apos;s work progress</h2>
+                  <p className="mt-0.5 text-xs text-[#718096]">
                     Live from daily / urgent work · updates every minute
                     {todayWork.asOf ? ` · last checked ${formatWhen(todayWork.asOf)}` : ""}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-teal-100 px-3 py-1 text-sm font-semibold text-teal-900">
+                  <span className="rounded-[6px] bg-[#EAF1FA] px-3 py-1 text-sm font-semibold text-[#142B4A]">
                     Team avg {todayWork.averagePercent}%
                   </span>
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800">
+                  <span className="rounded-[6px] bg-[#16A36A]/12 px-3 py-1 text-xs font-medium text-[#16A36A]">
                     {todayWork.doneItems}/{todayWork.totalItems} done
                   </span>
-                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-900">
+                  <span className="rounded-[6px] bg-[#E6A23C]/15 px-3 py-1 text-xs font-medium text-[#b87a1c]">
                     {todayWork.pendingItems} pending
                   </span>
-                  <Link to="/dashboard/daily-tasks" className="text-sm font-medium text-emerald-700 hover:underline">
+                  <Link to="/dashboard/daily-tasks" className="text-sm font-medium text-[#3569A8] hover:underline">
                     Open daily tasks
                   </Link>
                 </div>
               </div>
 
               {(todayWork.employees || []).length === 0 ? (
-                <p className="mt-4 text-sm text-slate-500">Aaj kisi employee pe scheduled daily work nahi hai.</p>
+                <p className="mt-4 text-sm text-slate-500">No scheduled daily work for any employee today.</p>
               ) : (
                 <ul className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {todayWork.employees.map((emp) => (
@@ -213,20 +213,20 @@ export function Dashboard() {
                             {emp.done}/{emp.total} items · {emp.pending} pending
                           </p>
                         </div>
-                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                        <span className={`rounded-[6px] px-2 py-0.5 text-[11px] font-semibold ${
                           emp.status === "DONE"
-                            ? "bg-emerald-100 text-emerald-800"
+                            ? "bg-[#16A36A]/12 text-[#16A36A]"
                             : emp.status === "PARTIAL"
-                              ? "bg-amber-100 text-amber-900"
-                              : "bg-slate-200 text-slate-700"
+                              ? "bg-[#E6A23C]/15 text-[#b87a1c]"
+                              : "bg-[#EAF1FA] text-[#718096]"
                         }`}>
                           {emp.percent}%
                         </span>
                       </div>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#E5EAF1]">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
-                            emp.percent >= 100 ? "bg-emerald-600" : emp.percent > 0 ? "bg-amber-500" : "bg-slate-400"
+                            emp.percent >= 100 ? "bg-[#16A36A]" : emp.percent > 0 ? "bg-[#E6A23C]" : "bg-[#94A3B8]"
                           }`}
                           style={{ width: `${Math.min(100, emp.percent)}%` }}
                         />
@@ -245,7 +245,7 @@ export function Dashboard() {
                 {data.operations.map((item) => {
                   const Icon = icons[item.key] || FolderKanban;
                   return (
-                    <Link key={item.key} to={item.href} className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm hover:border-emerald-200">
+                    <Link key={item.key} to={item.href} className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm hover:border-[#3569A8]/30">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-xs font-medium text-slate-500">{item.label}</p>
                         <Icon className="h-4 w-4 text-teal-700" />
@@ -265,7 +265,7 @@ export function Dashboard() {
                 <section key={list.title} className="rounded-xl border border-slate-200 bg-white shadow-sm">
                   <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                     <h2 className="text-sm font-semibold text-slate-900">{list.title}</h2>
-                    <Link to={list.href} className="text-sm font-medium text-emerald-700">View all</Link>
+                    <Link to={list.href} className="text-sm font-medium text-[#3569A8]">View all</Link>
                   </div>
                   <ul className="divide-y divide-slate-100">
                     {list.rows.map((row) => (
@@ -330,7 +330,7 @@ export function Dashboard() {
                 <ul className="divide-y divide-slate-100">
                   {data.activity.map((row) => (
                     <li key={row.id}>
-                      <Link to={row.href} className="flex items-center justify-between gap-3 py-3 hover:text-emerald-800">
+                      <Link to={row.href} className="flex items-center justify-between gap-3 py-3 hover:text-[#1E416B]">
                         <span className="truncate text-sm text-slate-800">{row.title}</span>
                         <span className="shrink-0 text-xs text-slate-500">{formatWhen(row.at)}</span>
                       </Link>
@@ -345,8 +345,8 @@ export function Dashboard() {
                 {actions.map((action) => {
                   const Icon = action.icon;
                   return (
-                    <Link key={action.href + action.label} to={action.href} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-700">
-                      <Icon className="h-4 w-4 text-emerald-700" />
+                    <Link key={action.href + action.label} to={action.href} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-[#EAF1FA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#3569A8]">
+                      <Icon className="h-4 w-4 text-[#3569A8]" />
                       {action.label}
                     </Link>
                   );

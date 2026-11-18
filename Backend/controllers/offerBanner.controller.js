@@ -229,7 +229,7 @@ const changeOfferBannerStatus = async (req, res, next) => {
         const row = await OfferBanner.findByIdAndUpdate(
             req.params.id,
             { $set: { status } },
-            { new: true },
+            { returnDocument: "after" },
         ).lean();
         if (!row) fail("Banner not found", 404);
         res.status(200).json({ success: true, data: presentBanner(row) });

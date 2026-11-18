@@ -115,7 +115,7 @@ export function NotificationPrefsPanel({ title = "Notification preferences" }) {
   }
 
   return (
-    <section className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+    <section className="rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
@@ -175,7 +175,7 @@ export function NotificationPrefsPanel({ title = "Notification preferences" }) {
           Active: {effective.ringtoneName || "Default"} · max 3 MB
         </p>
         {personal.hasRingtone ? (
-          <p className="mt-1 text-xs text-emerald-700">Uploaded: {personal.ringtoneName || "ringtone"}</p>
+          <p className="mt-1 text-xs text-[#3569A8]">Uploaded: {personal.ringtoneName || "ringtone"}</p>
         ) : (
           <p className="mt-1 text-xs text-slate-500">
             {defaults.hasRingtone

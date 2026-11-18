@@ -359,7 +359,7 @@ export function SoftwareSettings() {
         <div>
           <h2 className="text-sm font-semibold text-slate-900">Evening client reports</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Evening reports ab manual hain. Ye setting legacy hai — employees client pe kitna kaam likhte hain, phir RM lock → approve → client sees.
+            Evening reports are manual. This setting is legacy — employees log work per client, then RM lock → approve → client sees it.
           </p>
         </div>
         <label className="flex items-center gap-2 text-sm text-slate-700">
@@ -369,7 +369,7 @@ export function SoftwareSettings() {
             onChange={(event) => setEveningEnabled(event.target.checked)}
             disabled={savingEvening}
           />
-          Legacy: auto-generate (ab off / unused — reports manual hain)
+          Legacy: auto-generate (now off / unused — reports are manual)
         </label>
         <div className="max-w-xs">
           <label className="mb-1 block text-xs font-medium text-slate-600">Legacy run time (HH:mm)</label>

@@ -9,7 +9,7 @@ import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { cn } from "../../utils/cn";
 
-const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 
 const DURATIONS = [
   { value: "HALF_DAY", label: "Half day" },
@@ -328,7 +328,7 @@ export function Leave() {
                     <td className="px-4 py-3 text-sm text-slate-700">{row.days}</td>
                     <td className="px-4 py-3"><span className={cn("inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium", statusClass(row.status))}>{row.status}</span></td>
                     <td className="max-w-xs px-4 py-3 text-sm text-slate-700"><span className="line-clamp-2">{plainRichText(row.reason)}</span></td>
-                    <td className="px-4 py-3 text-sm">{row.document?.url ? <a className="text-emerald-700 hover:underline" href={row.document.url} target="_blank" rel="noreferrer">View</a> : "—"}</td>
+                    <td className="px-4 py-3 text-sm">{row.document?.url ? <a className="text-[#3569A8] hover:underline" href={row.document.url} target="_blank" rel="noreferrer">View</a> : "—"}</td>
                     <td className="px-4 py-3 text-right">
                       {row.status === "PENDING" && (
                         <div className="flex justify-end gap-2">
@@ -377,7 +377,7 @@ export function Leave() {
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{dateLabel(row)}</td>
                     <td className="px-4 py-3 text-sm text-slate-700">{row.days}</td>
                     <td className="max-w-xs px-4 py-3 text-sm text-slate-700"><span className="line-clamp-2">{plainRichText(row.reason)}</span></td>
-                    <td className="px-4 py-3 text-sm">{row.document?.url ? <a className="text-emerald-700 hover:underline" href={row.document.url} target="_blank" rel="noreferrer">View</a> : "—"}</td>
+                    <td className="px-4 py-3 text-sm">{row.document?.url ? <a className="text-[#3569A8] hover:underline" href={row.document.url} target="_blank" rel="noreferrer">View</a> : "—"}</td>
                     <td className="px-4 py-3 text-right">
                       {row.status === "PENDING" ? (
                         <div className="flex justify-end gap-2">

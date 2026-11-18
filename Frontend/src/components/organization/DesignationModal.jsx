@@ -89,7 +89,7 @@ export function DesignationModal({ isOpen, onClose, designation, onSuccess }) {
               value={departmentId}
               onChange={(e) => setDepartmentId(e.target.value)}
               disabled={isLoading || !!designation} // Usually cannot change dept of existing designation
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:bg-slate-100 disabled:cursor-not-allowed"
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#3569A8] focus:outline-none focus:ring-1 focus:ring-[#3569A8] disabled:bg-slate-100 disabled:cursor-not-allowed"
             >
               <option value="">Select a department</option>
               {departments.map((dept) => (

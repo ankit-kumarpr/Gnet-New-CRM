@@ -120,8 +120,8 @@ export function EmployeeProfile() {
         )}
       </div>
 
-      <div className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
-        <div className="bg-gradient-to-r from-emerald-950 via-emerald-800 to-teal-600 px-6 py-8 text-white">
+      <div className="overflow-hidden rounded-3xl border border-[#E5EAF1] bg-white shadow-sm">
+        <div className="bg-gradient-to-r from-[#102238] via-[#142B4A] to-[#1E416B] px-6 py-8 text-white">
           <div className="flex flex-wrap items-center gap-5">
             <ProfilePhotoEditor
               name={employee.name}
@@ -138,20 +138,20 @@ export function EmployeeProfile() {
             />
             <div>
               <h2 className="text-2xl font-semibold">{employee.name}</h2>
-              {mine && <p className="mt-1 text-xs text-emerald-100/90">Tap the camera icon to update your photo</p>}
-              <p className="text-sm text-emerald-100">{[employee.employeeId, employee.designation?.name || employee.userType].filter(Boolean).join(" · ")}</p>
-              <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${employee.status === "ACTIVE" ? "border-emerald-300/40 bg-emerald-400/20 text-emerald-50" : "border-rose-200 bg-rose-500/20 text-rose-50"}`}>
-                <span className={`h-1.5 w-1.5 rounded-full ${employee.status === "ACTIVE" ? "bg-emerald-300" : "bg-rose-300"}`} />
+              {mine && <p className="mt-1 text-xs text-white/80/90">Tap the camera icon to update your photo</p>}
+              <p className="text-sm text-white/80">{[employee.employeeId, employee.designation?.name || employee.userType].filter(Boolean).join(" · ")}</p>
+              <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${employee.status === "ACTIVE" ? "border-[#3569A8]/40/40 bg-white/15 text-white/90" : "border-rose-200 bg-rose-500/20 text-rose-50"}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${employee.status === "ACTIVE" ? "bg-[#16A36A]" : "bg-rose-300"}`} />
                 {employee.status || "ACTIVE"}
               </span>
             </div>
           </div>
         </div>
         <div className="grid gap-3 px-6 py-5 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          <p className="flex items-start gap-2"><Mail className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{employee.email}</p>
-          <p className="flex items-start gap-2"><Phone className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{employee.phone}</p>
+          <p className="flex items-start gap-2"><Mail className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{employee.email}</p>
+          <p className="flex items-start gap-2"><Phone className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{employee.phone}</p>
           {addressLine(employee.address) && (
-            <p className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{addressLine(employee.address)}</p>
+            <p className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{addressLine(employee.address)}</p>
           )}
         </div>
       </div>
@@ -159,7 +159,7 @@ export function EmployeeProfile() {
       {(showWork || team.length > 0) && (
         <div className={cn("grid gap-6", showWork && team.length > 0 && "lg:grid-cols-2")}>
           {showWork && (
-            <section className="rounded-2xl border border-emerald-100 bg-white/90 p-5 shadow-sm">
+            <section className="rounded-2xl border border-[#E5EAF1] bg-white/90 p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-900">Work</h3>
               <dl className="mt-3 space-y-2 text-sm">
                 {workRows.map(([label, value]) => (
@@ -175,7 +175,7 @@ export function EmployeeProfile() {
                   <div className="flex justify-between gap-4">
                     <dt className="text-slate-500">Reports to</dt>
                     <dd className="text-right text-slate-900">
-                      <Link className="text-emerald-700 hover:underline" to={`/dashboard/employees/${employee.reportingManager._id}`}>{employee.reportingManager.name}</Link>
+                      <Link className="text-[#3569A8] hover:underline" to={`/dashboard/employees/${employee.reportingManager._id}`}>{employee.reportingManager.name}</Link>
                     </dd>
                   </div>
                 )}
@@ -184,16 +184,16 @@ export function EmployeeProfile() {
           )}
 
           {team.length > 0 && (
-            <section className="rounded-2xl border border-emerald-100 bg-white/90 p-5 shadow-sm">
+            <section className="rounded-2xl border border-[#E5EAF1] bg-white/90 p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-900">Team</h3>
-              <ul className="mt-3 divide-y divide-emerald-50">
+              <ul className="mt-3 divide-y divide-[#E5EAF1]">
                 {team.map((person) => (
                   <li key={person._id} className="flex items-center justify-between py-2">
                     <div>
-                      <Link className="text-sm font-medium text-emerald-700 hover:underline" to={`/dashboard/employees/${person._id}`}>{person.name}</Link>
+                      <Link className="text-sm font-medium text-[#3569A8] hover:underline" to={`/dashboard/employees/${person._id}`}>{person.name}</Link>
                       {person.employeeId && <p className="text-xs text-slate-500">{person.employeeId}</p>}
                     </div>
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${person.status === "ACTIVE" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"}`}>{person.status || "ACTIVE"}</span>
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${person.status === "ACTIVE" ? "bg-[#EAF1FA] text-[#1E416B]" : "bg-rose-50 text-rose-800"}`}>{person.status || "ACTIVE"}</span>
                   </li>
                 ))}
               </ul>
@@ -205,12 +205,12 @@ export function EmployeeProfile() {
       {mine && <NotificationPrefsPanel title="My notification preferences" />}
 
       {(employee.documents || []).length > 0 && (
-        <section className="rounded-2xl border border-emerald-100 bg-white/90 p-5 shadow-sm">
+        <section className="rounded-2xl border border-[#E5EAF1] bg-white/90 p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-slate-900">Documents</h3>
           <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {employee.documents.map((doc) => (
               <li key={doc._id}>
-                <a href={doc.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-gradient-to-r from-white to-emerald-50 px-3 py-2 text-sm text-emerald-800 hover:border-emerald-200">
+                <a href={doc.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-xl border border-[#E5EAF1] bg-gradient-to-r from-white to-[#EAF1FA] px-3 py-2 text-sm text-[#1E416B] hover:border-[#3569A8]/30">
                   <FileText className="h-4 w-4 shrink-0" />
                   <span className="truncate">{doc.name}</span>
                 </a>
@@ -221,11 +221,11 @@ export function EmployeeProfile() {
       )}
 
       {(employee.permissions || []).length > 0 && (
-        <section className="rounded-2xl border border-emerald-100 bg-white/90 p-5 shadow-sm">
+        <section className="rounded-2xl border border-[#E5EAF1] bg-white/90 p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-slate-900">Permissions</h3>
           <div className="mt-3 flex flex-wrap gap-2">
             {employee.permissions.map((key) => (
-              <span key={key} className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800">{PERMISSION_LABELS[key] || key}</span>
+              <span key={key} className="rounded-full border border-[#E5EAF1] bg-[#EAF1FA] px-2.5 py-1 text-xs font-medium text-[#1E416B]">{PERMISSION_LABELS[key] || key}</span>
             ))}
           </div>
         </section>

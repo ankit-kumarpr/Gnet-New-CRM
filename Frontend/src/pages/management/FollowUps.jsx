@@ -63,7 +63,7 @@ export function FollowUps() {
             onClick={() => setRange(item.id)}
             className={cn(
               "rounded-xl border px-4 py-3 text-left shadow-sm",
-              range === item.id ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-white"
+              range === item.id ? "border-[#3569A8]/40 bg-[#EAF1FA]" : "border-slate-200 bg-white"
             )}
           >
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{item.label}</p>

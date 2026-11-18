@@ -86,7 +86,7 @@ export function MasterList({ title, description, endpoint, placeholder, permissi
           <Input placeholder={`Search ${title.toLowerCase()}...`} className="pl-9" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} />
         </div>
         <select
-          className="h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600"
+          className="h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]"
           value={statusFilter}
           onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}
         >
@@ -123,7 +123,7 @@ export function MasterList({ title, description, endpoint, placeholder, permissi
                     <div className="flex items-center justify-end gap-2">
                       {canEdit && (
                         <Button variant="ghost" size="icon" title="Edit" onClick={() => { setSelected(row); setIsModalOpen(true); }}>
-                          <Edit2 className="h-4 w-4 text-slate-500 hover:text-emerald-600" />
+                          <Edit2 className="h-4 w-4 text-slate-500 hover:text-[#3569A8]" />
                         </Button>
                       )}
                       {canDelete && (

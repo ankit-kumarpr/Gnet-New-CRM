@@ -264,7 +264,7 @@ export function ClientEmails() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Client emails</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Templates banao, clients select karo, extra emails add karo, attachments ke saath mail bhejo.
+            Create templates, select clients, add extra emails, and send mail with attachments.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -339,7 +339,7 @@ export function ClientEmails() {
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">Template</label>
                 <select
-                  className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                  className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]"
                   value={sendTemplateId}
                   disabled={sending}
                   onChange={(event) => onPickTemplate(event.target.value)}
@@ -370,8 +370,8 @@ export function ClientEmails() {
                   disabled={sending}
                   value={extraEmails}
                   onChange={(event) => setExtraEmails(event.target.value)}
-                  placeholder="Comma or new-line se alag emails"
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                  placeholder="Separate emails with commas or new lines"
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]"
                 />
               </div>
               <div>
@@ -394,7 +394,7 @@ export function ClientEmails() {
                 </label>
                 <button
                   type="button"
-                  className="text-xs font-medium text-emerald-700 hover:underline"
+                  className="text-xs font-medium text-[#3569A8] hover:underline"
                   onClick={toggleAllVisible}
                   disabled={sending || !clients.length}
                 >
@@ -419,7 +419,7 @@ export function ClientEmails() {
                   return (
                     <label
                       key={client._id}
-                      className={`flex cursor-pointer items-start gap-2 rounded-md px-2 py-2 text-sm hover:bg-slate-50 ${checked ? "bg-emerald-50" : ""}`}
+                      className={`flex cursor-pointer items-start gap-2 rounded-md px-2 py-2 text-sm hover:bg-slate-50 ${checked ? "bg-[#EAF1FA]" : ""}`}
                     >
                       <input
                         type="checkbox"
@@ -450,7 +450,7 @@ export function ClientEmails() {
           {sendResults.length > 0 && (
             <ul className="max-h-48 space-y-1 overflow-auto rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
               {sendResults.map((item, index) => (
-                <li key={`${item.email}-${index}`} className={item.sent ? "text-emerald-700" : "text-red-700"}>
+                <li key={`${item.email}-${index}`} className={item.sent ? "text-[#3569A8]" : "text-red-700"}>
                   {item.sent ? "Sent" : "Failed"} — {item.name ? `${item.name} · ` : ""}{item.email}
                   {!item.sent && item.reason ? ` (${item.reason})` : ""}
                 </li>

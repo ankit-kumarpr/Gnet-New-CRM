@@ -9,7 +9,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useTaskAlerts } from "../../context/TaskAlertContext";
 import { cn } from "../../utils/cn";
 
-const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 
 const todayInput = () => {
   const d = new Date();
@@ -45,7 +45,7 @@ const dayTitle = new Intl.DateTimeFormat("en-IN", {
 });
 
 const statusPill = (status) => {
-  if (status === "DONE") return "bg-emerald-100 text-emerald-800";
+  if (status === "DONE") return "bg-[#16A36A]/12 text-[#1E416B]";
   if (status === "PARTIAL") return "bg-amber-100 text-amber-900";
   return "bg-slate-100 text-slate-700";
 };
@@ -184,7 +184,7 @@ export function DailyTasks() {
           <p className="mt-1 text-sm text-slate-500">
             {canBrowseOthers
               ? "Work plans + urgent work for the selected date. Filter by employee or download reports."
-              : "Date badlo → us din ka aapka kaam + done/pending report. Mark done yahin, pehle ke din bhi dikhenge."}
+              : "Change the date to see that day's work and done/pending report. Mark items done here — previous days are also available."}
           </p>
         </div>
         <Button type="button" variant="outline" onClick={load} disabled={loading}>
@@ -240,7 +240,7 @@ export function DailyTasks() {
             { key: "ALL", label: "All", count: counts.ALL || 0, className: "bg-slate-100 text-slate-700" },
             { key: "PENDING", label: "Pending", count: counts.PENDING || 0, className: "bg-slate-100 text-slate-700" },
             { key: "PARTIAL", label: "Partial", count: counts.PARTIAL || 0, className: "bg-amber-100 text-amber-900" },
-            { key: "DONE", label: "Done", count: counts.DONE || 0, className: "bg-emerald-100 text-emerald-800" },
+            { key: "DONE", label: "Done", count: counts.DONE || 0, className: "bg-[#16A36A]/12 text-[#1E416B]" },
           ].map((chip) => (
             <button
               key={chip.key}
@@ -249,7 +249,7 @@ export function DailyTasks() {
               className={cn(
                 "rounded-full px-2.5 py-1 font-medium transition",
                 chip.className,
-                statusFilter === chip.key && "ring-2 ring-emerald-600 ring-offset-1",
+                statusFilter === chip.key && "ring-2 ring-[#3569A8] ring-offset-1",
               )}
             >
               {chip.label} {chip.count}
@@ -260,11 +260,11 @@ export function DailyTasks() {
       </div>
 
       {!canBrowseOthers && !loading && (
-        <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 shadow-sm">
-          <p className="text-sm font-semibold text-slate-900">Aaj / selected din ki aapki report</p>
+        <div className="rounded-xl border border-[#E5EAF1] bg-[#EAF1FA]/50 p-4 shadow-sm">
+          <p className="text-sm font-semibold text-slate-900">Your report for today / the selected day</p>
           <p className="mt-1 text-xs text-slate-600">
-            {dayTitle.format(new Date(`${date}T00:00:00`))} · Done mark karne ke baad bhi yahin history rehti hai.
-            Purane din dekhne ke liye upar date change karo.
+            {dayTitle.format(new Date(`${date}T00:00:00`))} · History stays here even after marking Done.
+            Change the date above to view previous days.
           </p>
           <div className="mt-3 grid gap-2 sm:grid-cols-4">
             <div className="rounded-lg bg-white px-3 py-2 border border-slate-100">
@@ -277,7 +277,7 @@ export function DailyTasks() {
             </div>
             <div className="rounded-lg bg-white px-3 py-2 border border-slate-100">
               <p className="text-[11px] uppercase tracking-wide text-slate-500">Done</p>
-              <p className="text-lg font-semibold text-emerald-800">{counts.DONE || 0}</p>
+              <p className="text-lg font-semibold text-[#1E416B]">{counts.DONE || 0}</p>
             </div>
             <div className="rounded-lg bg-white px-3 py-2 border border-slate-100">
               <p className="text-[11px] uppercase tracking-wide text-slate-500">Complete</p>
@@ -296,7 +296,7 @@ export function DailyTasks() {
             <p className="text-xs text-slate-500">
               {canBrowseOthers
                 ? "Employee filter + Excel with % complete, % pending, done/pending counts."
-                : "Date range select karke apni daily done/pending report Excel me download karo."}
+                : "Select a date range to download your daily done/pending report as Excel."}
             </p>
           </div>
           <Button type="button" variant="outline" onClick={setThisMonth}>This month</Button>
@@ -335,8 +335,8 @@ export function DailyTasks() {
       ) : groups.filter((g) => statusFilter === "ALL" || g.status === statusFilter).length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500">
           {groups.length === 0
-            ? "Is din ke liye koi assigned work nahi hai."
-            : `Is filter (${statusFilter === "ALL" ? "All" : statusText(statusFilter)}) me kuch nahi mila — dusra filter try karo.`}
+            ? "No assigned work for this day."
+            : `Nothing matched this filter (${statusFilter === "ALL" ? "All" : statusText(statusFilter)}) — try another filter.`}
         </div>
       ) : (
         <div className="space-y-4">

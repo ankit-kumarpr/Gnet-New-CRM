@@ -3,7 +3,8 @@ const Client = require("../models/Client");
 const Service = require("../models/Service");
 const User = require("../models/User");
 const ClientWorkPlan = require("../models/ClientWorkPlan");
-const { PLAN_MODES, SLOT_STATUSES } = require("../models/ClientWorkPlan");
+const { PLAN_MODES, SLOT_STATUSES, PART_STATUSES } = require("../models/ClientWorkPlan");
+const { mergeProgress, clampPartStatus } = require("../utils/workPlanBuilder");
 const UrgentWork = require("../models/UrgentWork");
 const { downlineIds } = require("../utils/reporting");
 const ExcelJS = require("exceljs");
@@ -140,11 +141,33 @@ const canSeePlan = (plan, user, downline) => {
 
 const canEditPlan = (plan, user, downline) => isSeniorOfPlan(plan, user, downline);
 
+const canUpdateProgress = (plan, user, downline) => {
+    if (!plan || !user) return false;
+    if (canEditPlan(plan, user, downline)) return true;
+    return isAssigneeOnly(plan, user);
+};
+
+const deriveProgressStatus = (plan) => {
+    if (plan.mode === "QUANTITY") {
+        const rows = (plan.deliverables || []).filter((row) => Number(row.quantity) > 0);
+        if (!rows.length) return "PENDING";
+        if (rows.every((row) => row.status === "COMPLETED" || Number(row.done) >= Number(row.quantity))) return "COMPLETED";
+        if (rows.some((row) => row.status === "WORKING" || row.status === "COMPLETED" || Number(row.done) > 0)) return "WORKING";
+        return "PENDING";
+    }
+    const rows = (plan.phases || []).filter((row) => Number(row.percent) > 0);
+    if (!rows.length) return "PENDING";
+    if (rows.every((row) => row.status === "COMPLETED" || Number(row.donePercent) >= Number(row.percent))) return "COMPLETED";
+    if (rows.some((row) => row.status === "WORKING" || row.status === "COMPLETED" || Number(row.donePercent) > 0)) return "WORKING";
+    return "PENDING";
+};
+
 const withPeople = (query) => query
     .populate("service", "name")
     .populate("reportingManager", "name")
     .populate("assignees", "name")
     .populate("createdBy", "name")
+    .populate("progressUpdatedBy", "name")
     .populate("slots.assignee", "name");
 
 const normalizePlanBody = (mode, body) => {
@@ -159,7 +182,9 @@ const shapePlan = (plan, user, downline) => {
     const data = {
         ...plan,
         canEdit: edit,
+        canUpdateProgress: canUpdateProgress(plan, user, downline),
         canSeeAll: edit || user.userType === "ADMIN",
+        progressStatus: plan.progressStatus || deriveProgressStatus(plan),
     };
     if (data.canSeeAll) return data;
     const me = String(user._id);
@@ -386,14 +411,116 @@ const updatePlan = async (req, res, next) => {
         plan.endDate = endDate;
         plan.reportingManager = reportingManager;
         plan.assignees = assignees;
-        plan.deliverables = normalized.deliverables;
-        plan.phases = normalized.phases;
+        plan.deliverables = mode === "QUANTITY"
+            ? mergeProgress(normalized.deliverables, plan.deliverables, "QUANTITY")
+            : [];
+        plan.phases = mode === "PERCENT"
+            ? mergeProgress(normalized.phases, plan.phases, "PERCENT")
+            : [];
         // Clear any previously auto-generated day slots — no automatic divide.
         plan.slots = [];
         await plan.save();
 
         const data = await withPeople(ClientWorkPlan.findById(plan._id)).lean();
         res.status(200).json({ success: true, data: shapePlan(data, req.user, downline) });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
+const updateProgress = async (req, res, next) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ success: false, message: "Invalid plan ID" });
+        }
+        const plan = await ClientWorkPlan.findById(req.params.id);
+        if (!plan) return res.status(404).json({ success: false, message: "Plan not found" });
+
+        const downline = await loadAccess(req.user);
+        if (!canSeePlan(plan, req.user, downline)) {
+            return res.status(404).json({ success: false, message: "Plan not found" });
+        }
+        if (!canUpdateProgress(plan, req.user, downline)) {
+            return res.status(403).json({ success: false, message: "Only assigned employees can update this progress" });
+        }
+
+        const items = Array.isArray(req.body.items) ? req.body.items : null;
+        if (!items || !items.length) fail("Send at least one progress item");
+
+        if (plan.mode === "QUANTITY") {
+            const byKey = new Map(items.map((row) => [String(row?.key || "").trim(), row]));
+            plan.deliverables = (plan.deliverables || []).map((row) => {
+                const patch = byKey.get(String(row.key));
+                if (!patch) return row;
+                const quantity = Number(row.quantity) || 0;
+                let done = row.done || 0;
+                let status = row.status || "PENDING";
+                if (patch.done != null) {
+                    done = Math.max(0, Math.floor(Number(patch.done) || 0));
+                    if (done > quantity) fail(`${row.label}: done cannot exceed ${quantity}`);
+                }
+                if (patch.status != null) {
+                    status = clampPartStatus(patch.status);
+                    if (!PART_STATUSES.includes(status)) fail("Status must be Pending, Working, or Completed");
+                }
+                if (status === "COMPLETED") done = quantity;
+                else if (done >= quantity && quantity > 0) status = "COMPLETED";
+                else if (done > 0 && status === "PENDING") status = "WORKING";
+                return {
+                    key: row.key,
+                    label: row.label,
+                    quantity,
+                    done,
+                    status,
+                };
+            });
+        } else {
+            const byKey = new Map(items.map((row) => [String(row?.key || "").trim(), row]));
+            plan.phases = (plan.phases || []).map((row) => {
+                const patch = byKey.get(String(row.key));
+                if (!patch) return row;
+                const percent = Number(row.percent) || 0;
+                let donePercent = row.donePercent || 0;
+                let status = row.status || "PENDING";
+                if (patch.donePercent != null) {
+                    donePercent = Math.min(100, Math.max(0, Math.floor(Number(patch.donePercent) || 0)));
+                    if (donePercent > percent) fail(`${row.label}: done % cannot exceed ${percent}%`);
+                }
+                if (patch.status != null) {
+                    status = clampPartStatus(patch.status);
+                    if (!PART_STATUSES.includes(status)) fail("Status must be Pending, Working, or Completed");
+                }
+                if (status === "COMPLETED") donePercent = percent;
+                else if (donePercent >= percent && percent > 0) status = "COMPLETED";
+                else if (donePercent > 0 && status === "PENDING") status = "WORKING";
+                return {
+                    key: row.key,
+                    label: row.label,
+                    percent,
+                    donePercent,
+                    status,
+                };
+            });
+        }
+
+        if (req.body.progressStatus != null) {
+            const overall = clampPartStatus(req.body.progressStatus);
+            if (!PART_STATUSES.includes(overall)) fail("Overall status must be Pending, Working, or Completed");
+            plan.progressStatus = overall;
+        } else {
+            plan.progressStatus = deriveProgressStatus(plan);
+        }
+        plan.progressUpdatedAt = new Date();
+        plan.progressUpdatedBy = req.user._id;
+        await plan.save();
+
+        const data = await withPeople(ClientWorkPlan.findById(plan._id)).lean();
+        res.status(200).json({
+            success: true,
+            message: "Progress updated",
+            data: shapePlan(data, req.user, downline),
+        });
     } catch (error) {
         if (error.status) return res.status(error.status).json({ success: false, message: error.message });
         next(error);
@@ -955,6 +1082,7 @@ module.exports = {
     getPlanById,
     createPlan,
     updatePlan,
+    updateProgress,
     updateSlot,
     deletePlan,
     getDailyPlanBoard,

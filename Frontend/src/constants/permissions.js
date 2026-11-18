@@ -269,7 +269,7 @@ export const EMPLOYEE_ASSIGNED_WORK_PERMISSIONS = [
   "VIEW_URGENT_WORK",
 ];
 
-const ACTION_PREFIX = /^(VIEW|CREATE|EDIT|DELETE|PUNCH|APPROVE)_(.+)$/;
+const ACTION_PREFIX = /^(VIEW|CREATE|EDIT|DELETE|PUNCH|APPROVE|SEND)_(.+)$/;
 
 export function permissionGranted(user, required) {
   if (!user) return false;
@@ -296,6 +296,8 @@ export function permissionGranted(user, required) {
       }
       if (moduleKey === "CHAT_GROUPS" && granted.has("MANAGE_CHAT")) return true;
       if (moduleKey === "LEAVE_QUEUE" && granted.has("APPROVE_LEAVE")) return true;
+      if (moduleKey === "CLIENT_MAILS" && granted.has("MANAGE_EMAIL_TEMPLATES")) return true;
+      if (moduleKey === "EMAIL_TEMPLATES" && granted.has("MANAGE_EMAIL_TEMPLATES")) return true;
     }
     return false;
   });

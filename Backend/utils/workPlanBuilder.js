@@ -17,6 +17,40 @@ const slugKey = (label, fallback = "ITEM") => {
     return base || fallback;
 };
 
+const PART_STATUSES = ["PENDING", "WORKING", "COMPLETED"];
+
+const clampPartStatus = (value, fallback = "PENDING") => {
+    const status = String(value || "").toUpperCase();
+    return PART_STATUSES.includes(status) ? status : fallback;
+};
+
+const mergeProgress = (rows, previous = [], mode = "QUANTITY") => {
+    const byKey = new Map((previous || []).map((row) => [String(row.key || ""), row]));
+    return rows.map((row) => {
+        const old = byKey.get(String(row.key || ""));
+        if (mode === "PERCENT") {
+            return {
+                key: row.key,
+                label: row.label,
+                percent: row.percent,
+                donePercent: Math.min(
+                    Number(row.percent) || 0,
+                    Math.max(0, Math.floor(Number(old?.donePercent ?? row.donePercent) || 0)),
+                ),
+                status: clampPartStatus(old?.status ?? row.status, "PENDING"),
+            };
+        }
+        const quantity = Number(row.quantity) || 0;
+        return {
+            key: row.key,
+            label: row.label,
+            quantity,
+            done: Math.min(quantity, Math.max(0, Math.floor(Number(old?.done ?? row.done) || 0))),
+            status: clampPartStatus(old?.status ?? row.status, "PENDING"),
+        };
+    });
+};
+
 const readDeliverables = (value) => {
     if (!Array.isArray(value) || !value.length) fail("Add at least one deliverable with quantity");
     const rows = value.map((row, index) => {
@@ -25,10 +59,13 @@ const readDeliverables = (value) => {
         const quantity = Number(row?.quantity);
         if (!Number.isFinite(quantity) || quantity < 0) fail("Quantity must be 0 or more");
         if (quantity > 500) fail("Quantity cannot be more than 500 per item");
+        const done = Math.max(0, Math.floor(Number(row?.done) || 0));
         return {
             key: String(row?.key || slugKey(label, `ITEM_${index + 1}`)).slice(0, 40),
             label: label.slice(0, 80),
             quantity: Math.floor(quantity),
+            done: Math.min(Math.floor(quantity), done),
+            status: clampPartStatus(row?.status, "PENDING"),
         };
     });
     if (!rows.some((row) => row.quantity > 0)) fail("Set quantity on at least one deliverable");
@@ -42,10 +79,13 @@ const readPhases = (value) => {
         if (!label) fail("Phase name is required");
         const percent = Number(row?.percent);
         if (!Number.isFinite(percent) || percent < 0) fail("Percent must be 0 or more");
+        const donePercent = Math.min(100, Math.max(0, Math.floor(Number(row?.donePercent) || 0)));
         return {
             key: String(row?.key || slugKey(label, `PHASE_${index + 1}`)).slice(0, 40),
             label: label.slice(0, 80),
             percent: Math.min(100, Math.floor(percent)),
+            donePercent,
+            status: clampPartStatus(row?.status, "PENDING"),
         };
     });
     const total = rows.reduce((sum, row) => sum + row.percent, 0);
@@ -107,6 +147,14 @@ const upsertWorkPlan = async ({
         ? { project: projectId, service: serviceId }
         : { client: clientId, service: serviceId, project: null };
 
+    const existing = await ClientWorkPlan.findOne(filter);
+    const deliverablesNext = resolvedMode === "QUANTITY"
+        ? mergeProgress(normalized.deliverables, existing?.deliverables || [], "QUANTITY")
+        : [];
+    const phasesNext = resolvedMode === "PERCENT"
+        ? mergeProgress(normalized.phases, existing?.phases || [], "PERCENT")
+        : [];
+
     const payload = {
         client: clientId,
         project: projectId || null,
@@ -116,14 +164,13 @@ const upsertWorkPlan = async ({
         endDate: end,
         reportingManager,
         assignees,
-        deliverables: normalized.deliverables,
-        phases: normalized.phases,
+        deliverables: deliverablesNext,
+        phases: phasesNext,
         // No automatic day / person divide — daily work is handled manually.
         slots: [],
         createdBy,
     };
 
-    const existing = await ClientWorkPlan.findOne(filter);
     if (existing) {
         Object.assign(existing, payload);
         await existing.save();
@@ -140,4 +187,7 @@ module.exports = {
     readPhases,
     normalizePlanBody,
     suggestModeFromName,
+    mergeProgress,
+    clampPartStatus,
+    PART_STATUSES,
 };

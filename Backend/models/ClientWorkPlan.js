@@ -2,17 +2,22 @@ const mongoose = require("mongoose");
 
 const PLAN_MODES = ["QUANTITY", "PERCENT"];
 const SLOT_STATUSES = ["PENDING", "DONE", "SKIPPED"];
+const PART_STATUSES = ["PENDING", "WORKING", "COMPLETED"];
 
 const deliverableSchema = new mongoose.Schema({
     key: { type: String, required: true, trim: true, maxlength: 40 },
     label: { type: String, required: true, trim: true, maxlength: 80 },
     quantity: { type: Number, min: 0, default: 0 },
+    done: { type: Number, min: 0, default: 0 },
+    status: { type: String, enum: PART_STATUSES, default: "PENDING" },
 }, { _id: false });
 
 const phaseSchema = new mongoose.Schema({
     key: { type: String, required: true, trim: true, maxlength: 40 },
     label: { type: String, required: true, trim: true, maxlength: 80 },
     percent: { type: Number, min: 0, max: 100, default: 0 },
+    donePercent: { type: Number, min: 0, max: 100, default: 0 },
+    status: { type: String, enum: PART_STATUSES, default: "PENDING" },
 }, { _id: false });
 
 const slotSchema = new mongoose.Schema({
@@ -37,6 +42,9 @@ const clientWorkPlanSchema = new mongoose.Schema({
     deliverables: [deliverableSchema],
     phases: [phaseSchema],
     slots: [slotSchema],
+    progressStatus: { type: String, enum: PART_STATUSES, default: "PENDING" },
+    progressUpdatedAt: { type: Date, default: null },
+    progressUpdatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 }, { timestamps: true });
 
@@ -45,7 +53,9 @@ clientWorkPlanSchema.index({ project: 1, service: 1 });
 clientWorkPlanSchema.index({ "slots.date": 1 });
 clientWorkPlanSchema.index({ "slots.assignee": 1, "slots.date": 1 });
 clientWorkPlanSchema.index({ reportingManager: 1, "slots.date": 1 });
+clientWorkPlanSchema.index({ progressStatus: 1 });
 
 module.exports = mongoose.model("ClientWorkPlan", clientWorkPlanSchema);
 module.exports.PLAN_MODES = PLAN_MODES;
 module.exports.SLOT_STATUSES = SLOT_STATUSES;
+module.exports.PART_STATUSES = PART_STATUSES;

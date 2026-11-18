@@ -109,7 +109,7 @@ export function Attendance() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Attendance</h1>
           <p className="mt-1 text-sm text-slate-500">Punch in and punch out with a live photo while you are inside the office range. One punch in and one punch out each day.</p>
         </div>
-        <Link to="/dashboard/attendance-report" className="text-sm font-medium text-emerald-600 hover:text-emerald-700">Attendance report</Link>
+        <Link to="/dashboard/attendance-report" className="text-sm font-medium text-[#3569A8] hover:text-[#3569A8]">Attendance report</Link>
       </div>
 
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

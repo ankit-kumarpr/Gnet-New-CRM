@@ -64,7 +64,7 @@ export function openClientReportWhatsApp({
 }) {
   const number = whatsappDigits(whatsapp || phone);
   if (!number) {
-    const err = new Error("Client ka WhatsApp / phone number save nahi hai");
+    const err = new Error("Client WhatsApp / phone number is not saved");
     err.code = "NO_PHONE";
     throw err;
   }

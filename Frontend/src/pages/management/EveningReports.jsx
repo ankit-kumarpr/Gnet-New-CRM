@@ -12,7 +12,7 @@ import { useBrand } from "../../context/BrandContext";
 import { cn } from "../../utils/cn";
 import { openClientReportWhatsApp } from "../../utils/whatsappShare";
 
-const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 
 const todayKey = () => {
   const d = new Date();
@@ -27,7 +27,7 @@ const dateLabel = (value) => {
 };
 
 const statusClass = (status) => {
-  if (status === "APPROVED") return "bg-emerald-50 text-emerald-800 border-emerald-200";
+  if (status === "APPROVED") return "bg-[#EAF1FA] text-[#1E416B] border-[#3569A8]/30";
   if (status === "LOCKED") return "bg-amber-50 text-amber-800 border-amber-200";
   return "bg-slate-50 text-slate-700 border-slate-200";
 };
@@ -54,7 +54,7 @@ function ReportDetail({ id, onBack }) {
   const shareWhatsApp = (report = row) => {
     if (!report?._id) return;
     if (report.status !== "APPROVED") {
-      toast.error("Pehle report approve karo, phir WhatsApp share karo");
+      toast.error("Approve the report first, then share on WhatsApp");
       return;
     }
     try {
@@ -67,7 +67,7 @@ function ReportDetail({ id, onBack }) {
         companyName: brand?.companyName,
       });
     } catch (error) {
-      toast.error(error.message || "WhatsApp open nahi hua");
+      toast.error(error.message || "Could not open WhatsApp");
     }
   };
 
@@ -92,7 +92,7 @@ function ReportDetail({ id, onBack }) {
   const saveMine = async () => {
     const cleaned = items.filter((item) => (item.label || "").trim() || (item.note || "").trim() || (item.serviceName || "").trim());
     if (!plainRichText(notes) && !cleaned.length) {
-      toast.error("Rich text me report likho, ya kam se kam 1 work line add karo");
+      toast.error("Write the report in rich text, or add at least 1 work line");
       return;
     }
     try {
@@ -174,7 +174,7 @@ function ReportDetail({ id, onBack }) {
             <h2 className="text-xl font-semibold text-slate-900">{row.client?.name || "Client"}</h2>
             <p className="text-sm text-slate-500">
               {dateLabel(row.date)} · RM {row.reportingManager?.name || "—"}
-              {mineOnly ? ` · Sirf aapka kaam` : ` · Combined team report`}
+              {mineOnly ? ` · Your work only` : ` · Combined team report`}
             </p>
           </div>
         </div>
@@ -182,9 +182,9 @@ function ReportDetail({ id, onBack }) {
       </div>
 
       {editable && (
-        <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
-          Neeche <strong>rich text editor</strong> me proper report likho (yahi client ko dikhegi). Optional lines se short checklist bhi add kar sakte ho.
-          Save/Submit ke baad RM <strong>Lock → Approve</strong> karega.
+        <div className="rounded-xl border border-[#E5EAF1] bg-[#EAF1FA]/60 px-4 py-3 text-sm text-[#142B4A]">
+          Write the full report in the <strong>rich text editor</strong> below (this is what the client will see). You can also add optional short checklist lines.
+          After Save/Submit, the RM will <strong>Lock → Approve</strong>.
         </div>
       )}
 
@@ -225,7 +225,7 @@ function ReportDetail({ id, onBack }) {
         <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <h3 className="text-sm font-semibold text-slate-900">Work report (client will see this)</h3>
           <p className="mt-1 text-xs text-slate-500">
-            Bold, headings, lists use karke proper detail likho — yehi approved report me client ko jayegi.
+            Use bold, headings, and lists for clear detail — this is what the client sees on the approved report.
           </p>
           {row.canEditNotes ? (
             <div className="mt-3">
@@ -257,8 +257,8 @@ function ReportDetail({ id, onBack }) {
             <thead className="bg-slate-50">
               <tr>
                 <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Service</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Kaam (kya)</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Kitna / detail</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Work (what)</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Amount / detail</th>
                 {!mineOnly && (
                   <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">By</th>
                 )}
@@ -270,7 +270,7 @@ function ReportDetail({ id, onBack }) {
               {items.length === 0 ? (
                 <tr>
                   <td colSpan={editable ? (mineOnly ? 5 : 6) : (mineOnly ? 4 : 5)} className="px-4 py-6 text-center text-slate-500">
-                    Abhi koi line nahi. Add line karke kaam likho.
+                    No lines yet. Click Add line to enter work.
                   </td>
                 </tr>
               ) : items.map((item, index) => (
@@ -278,7 +278,7 @@ function ReportDetail({ id, onBack }) {
                   <td className="px-3 py-2 align-top">
                     {editable ? (
                       <input
-                        className="h-9 w-full min-w-[110px] rounded-md border border-slate-200 px-2 text-sm outline-none focus:ring-2 focus:ring-emerald-600"
+                        className="h-9 w-full min-w-[110px] rounded-md border border-slate-200 px-2 text-sm outline-none focus:ring-2 focus:ring-[#3569A8]"
                         value={item.serviceName || ""}
                         disabled={saving}
                         placeholder="SEO / Social…"
@@ -289,7 +289,7 @@ function ReportDetail({ id, onBack }) {
                   <td className="px-3 py-2 align-top">
                     {editable ? (
                       <input
-                        className="h-9 w-full min-w-[140px] rounded-md border border-slate-200 px-2 text-sm outline-none focus:ring-2 focus:ring-emerald-600"
+                        className="h-9 w-full min-w-[140px] rounded-md border border-slate-200 px-2 text-sm outline-none focus:ring-2 focus:ring-[#3569A8]"
                         value={item.label || ""}
                         disabled={saving}
                         placeholder="Reels / Posts / Page…"
@@ -300,7 +300,7 @@ function ReportDetail({ id, onBack }) {
                   <td className="px-3 py-2 align-top min-w-[160px]">
                     {editable ? (
                       <input
-                        className="h-9 w-full rounded-md border border-slate-200 px-2 text-sm outline-none focus:ring-2 focus:ring-emerald-600"
+                        className="h-9 w-full rounded-md border border-slate-200 px-2 text-sm outline-none focus:ring-2 focus:ring-[#3569A8]"
                         value={item.note || ""}
                         disabled={saving}
                         placeholder="e.g. 5 done, 2 pending"
@@ -390,7 +390,7 @@ export function EveningReports({ todayMode = false } = {}) {
 
   const shareRowWhatsApp = (row) => {
     if (row.status !== "APPROVED") {
-      toast.error("Sirf approved report WhatsApp pe share hoti hai");
+      toast.error("Only approved reports can be shared on WhatsApp");
       return;
     }
     try {
@@ -403,7 +403,7 @@ export function EveningReports({ todayMode = false } = {}) {
         companyName: brand?.companyName,
       });
     } catch (error) {
-      toast.error(error.message || "WhatsApp open nahi hua");
+      toast.error(error.message || "Could not open WhatsApp");
     }
   };
 
@@ -447,14 +447,14 @@ export function EveningReports({ todayMode = false } = {}) {
       const res = await api.get("/admin/evening-reports/meta/clients");
       setClients(res.data.data || []);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Clients load nahi hue");
+      toast.error(error.response?.data?.message || "Could not load clients");
       setClients([]);
     }
   };
 
   const createReport = async (event) => {
     event.preventDefault();
-    if (!createClient) return toast.error("Client select karo");
+    if (!createClient) return toast.error("Select a client");
     try {
       setCreating(true);
       const res = await api.post("/admin/evening-reports", {
@@ -488,7 +488,7 @@ export function EveningReports({ todayMode = false } = {}) {
             {todayMode ? "Today's reports" : "Evening client reports"}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Manual: har client pe kitna kaam kiya likho → Save/Submit → RM Lock → Approve → client ko dikhe.
+            Manual flow: write work done per client → Save/Submit → RM Lock → Approve → visible to client.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -505,7 +505,7 @@ export function EveningReports({ todayMode = false } = {}) {
       </div>
 
       {showCreate && (
-        <form onSubmit={createReport} className="grid gap-3 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 shadow-sm sm:grid-cols-3">
+        <form onSubmit={createReport} className="grid gap-3 rounded-xl border border-[#E5EAF1] bg-[#EAF1FA]/40 p-4 shadow-sm sm:grid-cols-3">
           <div className="sm:col-span-1">
             <label className="mb-1 block text-xs font-medium text-slate-600">Client *</label>
             <select className={selectClass} value={createClient} onChange={(e) => setCreateClient(e.target.value)} disabled={creating}>
@@ -521,7 +521,7 @@ export function EveningReports({ todayMode = false } = {}) {
               })}
             </select>
             {!creating && clients.length === 0 && (
-              <p className="mt-1 text-[11px] text-amber-700">Koi assigned client/project nahi mila.</p>
+              <p className="mt-1 text-[11px] text-amber-700">No assigned client/project found.</p>
             )}
           </div>
           <div>
@@ -568,7 +568,7 @@ export function EveningReports({ todayMode = false } = {}) {
             ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
-                  Koi report nahi. <strong>New report</strong> se client choose karke manual fill karo.
+                  No reports yet. Use <strong>New report</strong>, choose a client, and fill it manually.
                 </td>
               </tr>
             ) : rows.map((row) => (

@@ -259,16 +259,27 @@ const assertUniqueClientContacts = async ({ email, phone, excludeId = null }) =>
     }
 };
 
+/** Empty/null emails break sparse unique (only one null/"") — remove the field entirely. */
+let blankEmailsScrubbed = false;
+const scrubBlankClientEmails = async () => {
+    if (blankEmailsScrubbed) return;
+    blankEmailsScrubbed = true;
+    await Client.updateMany(
+        { $or: [{ email: null }, { email: "" }] },
+        { $unset: { email: 1 } },
+    );
+};
+
 const createClient = async (req, res, next) => {
     try {
+        await scrubBlankClientEmails();
         const fields = await readClient(req.body, { requireEmail: false });
         await assertUniqueClientContacts({ email: fields.email, phone: fields.phone });
         const clientId = await generateId("CLT");
         const plainPassword = clientId;
 
-        const client = await Client.create({
+        const payload = {
             name: fields.name,
-            email: fields.email || undefined,
             phone: fields.phone,
             whatsapp: fields.whatsapp,
             address: fields.address,
@@ -280,7 +291,10 @@ const createClient = async (req, res, next) => {
             password: plainPassword,
             permissions: [...DEFAULT_CLIENT_PERMISSIONS],
             createdBy: req.user._id,
-        });
+        };
+        if (fields.email) payload.email = fields.email;
+
+        const client = await Client.create(payload);
 
         let mail = { sent: false, reason: "No email on client" };
         if (client.email) {
@@ -481,6 +495,7 @@ const getClientById = async (req, res, next) => {
 
 const updateClient = async (req, res, next) => {
     try {
+        await scrubBlankClientEmails();
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
             return res.status(400).json({ success: false, message: "Invalid client ID format" });
         }
@@ -498,18 +513,22 @@ const updateClient = async (req, res, next) => {
             phone: fields.phone,
             excludeId: client._id,
         });
-        client.name = fields.name;
-        client.email = fields.email || null;
-        client.phone = fields.phone;
-        client.whatsapp = fields.whatsapp;
-        client.address = fields.address;
-        client.remark = fields.remark;
-        client.payments = fields.payments;
-        client.services = fields.services;
-        client.reportingManager = fields.reportingManager;
-        await client.save();
 
-        const data = await Client.findById(client._id)
+        const setFields = {
+            name: fields.name,
+            phone: fields.phone,
+            whatsapp: fields.whatsapp,
+            address: fields.address,
+            remark: fields.remark,
+            payments: fields.payments,
+            services: fields.services,
+            reportingManager: fields.reportingManager,
+        };
+        const update = fields.email
+            ? { $set: { ...setFields, email: fields.email } }
+            : { $set: setFields, $unset: { email: 1 } };
+        const data = await Client.findByIdAndUpdate(client._id, update, { returnDocument: "after", runValidators: true })
+
             .populate("services", "name description")
             .populate("reportingManager", "name email phone")
             .lean();
@@ -817,6 +836,7 @@ const downloadClientSample = async (req, res, next) => {
 
 const importClients = async (req, res, next) => {
     try {
+        await scrubBlankClientEmails();
         if (!canCreateClient(req.user)) {
             return res.status(403).json({ success: false, message: "You cannot add clients" });
         }
@@ -995,21 +1015,24 @@ const importClients = async (req, res, next) => {
                 const passwords = await Promise.all(
                     clientIds.map((id) => bcrypt.hash(id, 10)),
                 );
-                const docs = unique.map((item, index) => ({
-                    name: item.name,
-                    email: item.email,
-                    phone: item.phone,
-                    whatsapp: item.whatsapp,
-                    address: item.address,
-                    remark: item.remark,
-                    services: item.services,
-                    reportingManager: item.reportingManager,
-                    clientId: clientIds[index],
-                    password: passwords[index],
-                    permissions: [...DEFAULT_CLIENT_PERMISSIONS],
-                    createdBy: req.user._id,
-                    payments: [],
-                }));
+                const docs = unique.map((item, index) => {
+                    const doc = {
+                        name: item.name,
+                        phone: item.phone,
+                        whatsapp: item.whatsapp,
+                        address: item.address,
+                        remark: item.remark,
+                        services: item.services,
+                        reportingManager: item.reportingManager,
+                        clientId: clientIds[index],
+                        password: passwords[index],
+                        permissions: [...DEFAULT_CLIENT_PERMISSIONS],
+                        createdBy: req.user._id,
+                        payments: [],
+                    };
+                    if (item.email) doc.email = item.email;
+                    return doc;
+                });
 
                 await Client.insertMany(docs, { ordered: false });
 

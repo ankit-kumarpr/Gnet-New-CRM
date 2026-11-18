@@ -5,8 +5,20 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import api from "../../services/api";
 
-const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
+const compactSelect = "h-8 rounded-md border border-slate-300 bg-white px-2 text-xs focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 const dayLabel = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", weekday: "short" });
+const PART_STATUSES = [
+  { value: "PENDING", label: "Pending" },
+  { value: "WORKING", label: "Working" },
+  { value: "COMPLETED", label: "Completed" },
+];
+
+const partStatusClass = (status) => {
+  if (status === "WORKING") return "bg-sky-100 text-sky-800";
+  if (status === "COMPLETED") return "bg-[#16A36A]/12 text-[#1E416B]";
+  return "bg-slate-100 text-slate-700";
+};
 
 const emptyQuantity = () => ([
   { key: "REEL", label: "Reel", quantity: 10 },
@@ -236,20 +248,37 @@ export function ClientWorkPlans({ client, project = null }) {
     }
   };
 
+  const savePartProgress = async (plan, row, patch) => {
+    if (!plan.canUpdateProgress) return;
+    try {
+      setSaving(true);
+      const res = await api.patch(`/admin/work-plans/${plan._id}/progress`, {
+        items: [{ key: row.key, ...patch }],
+      });
+      const next = res.data.data;
+      setPlans((current) => current.map((item) => (item._id === plan._id ? next : item)));
+      toast.success("Progress saved");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not update progress");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const unusedServices = services.filter(
     (service) => !plans.some((plan) => String(plan.service?._id || plan.service) === String(service._id)),
   );
 
   return (
-    <section className="space-y-4 rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+    <section className="space-y-4 rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <CalendarRange className="h-4 w-4 text-emerald-700" />
+            <CalendarRange className="h-4 w-4 text-[#3569A8]" />
             Work plans
           </h3>
           <p className="mt-1 text-xs text-slate-500">
-            Service-wise targets (quantity / %). Auto day-divide nahi hota. Admin / senior edit kar sakte hain.
+            Service-wise targets (quantity / %). Assignees can mark each part Pending / Working / Completed and update done count.
           </p>
         </div>
         {!showForm && unusedServices.length > 0 && (
@@ -414,10 +443,14 @@ export function ClientWorkPlans({ client, project = null }) {
                     {plan.endDate ? dayLabel.format(new Date(plan.endDate)) : "—"}
                     {" · "}
                     Senior: {plan.reportingManager?.name || "—"}
-                    {!plan.canEdit ? " · view only (your items)" : ""}
+                    {plan.canUpdateProgress && !plan.canEdit
+                      ? " · update your progress below"
+                      : !plan.canEdit
+                        ? " · view only"
+                        : ""}
                   </p>
                   {planTotalsLine(plan) ? (
-                    <p className="mt-1 text-xs font-medium text-emerald-800">
+                    <p className="mt-1 text-xs font-medium text-[#1E416B]">
                       Total plan: {planTotalsLine(plan)}
                     </p>
                   ) : null}
@@ -430,6 +463,17 @@ export function ClientWorkPlans({ client, project = null }) {
                 )}
               </div>
               <div className="space-y-2 px-4 py-3">
+                <div className="mb-1 flex flex-wrap items-center gap-2">
+                  <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium ${partStatusClass(plan.progressStatus)}`}>
+                    {PART_STATUSES.find((item) => item.value === plan.progressStatus)?.label || "Pending"}
+                  </span>
+                  {plan.progressUpdatedAt && (
+                    <span className="text-[11px] text-slate-500">
+                      Updated {dayLabel.format(new Date(plan.progressUpdatedAt))}
+                      {plan.progressUpdatedBy?.name ? ` · ${plan.progressUpdatedBy.name}` : ""}
+                    </span>
+                  )}
+                </div>
                 {plan.mode === "QUANTITY" ? (
                   (plan.deliverables || []).filter((row) => Number(row.quantity) > 0).length ? (
                     (plan.deliverables || [])
@@ -437,10 +481,46 @@ export function ClientWorkPlans({ client, project = null }) {
                       .map((row) => (
                         <div
                           key={row.key || row.label}
-                          className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm"
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm"
                         >
-                          <span className="font-medium text-slate-900">{row.label}</span>
-                          <span className="text-slate-600">× {row.quantity}</span>
+                          <div>
+                            <p className="font-medium text-slate-900">{row.label}</p>
+                            <p className="text-xs text-slate-500">
+                              Done {Number(row.done) || 0} / {row.quantity}
+                            </p>
+                          </div>
+                          {plan.canUpdateProgress ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Input
+                                type="number"
+                                min={0}
+                                max={row.quantity}
+                                className="h-8 w-20 px-2 text-xs"
+                                defaultValue={Number(row.done) || 0}
+                                key={`${plan._id}-${row.key}-done-${row.done}`}
+                                disabled={saving}
+                                onBlur={(e) => {
+                                  const done = Number(e.target.value);
+                                  if (!Number.isFinite(done) || done === Number(row.done || 0)) return;
+                                  savePartProgress(plan, row, { done });
+                                }}
+                              />
+                              <select
+                                className={compactSelect}
+                                value={row.status || "PENDING"}
+                                disabled={saving}
+                                onChange={(e) => savePartProgress(plan, row, { status: e.target.value })}
+                              >
+                                {PART_STATUSES.map((item) => (
+                                  <option key={item.value} value={item.value}>{item.label}</option>
+                                ))}
+                              </select>
+                            </div>
+                          ) : (
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${partStatusClass(row.status)}`}>
+                              {PART_STATUSES.find((item) => item.value === row.status)?.label || "Pending"}
+                            </span>
+                          )}
                         </div>
                       ))
                   ) : (
@@ -452,10 +532,46 @@ export function ClientWorkPlans({ client, project = null }) {
                     .map((row) => (
                       <div
                         key={row.key || row.label}
-                        className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm"
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm"
                       >
-                        <span className="font-medium text-slate-900">{row.label}</span>
-                        <span className="text-slate-600">{row.percent}%</span>
+                        <div>
+                          <p className="font-medium text-slate-900">{row.label}</p>
+                          <p className="text-xs text-slate-500">
+                            Done {Number(row.donePercent) || 0}% / {row.percent}%
+                          </p>
+                        </div>
+                        {plan.canUpdateProgress ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Input
+                              type="number"
+                              min={0}
+                              max={row.percent}
+                              className="h-8 w-20 px-2 text-xs"
+                              defaultValue={Number(row.donePercent) || 0}
+                              key={`${plan._id}-${row.key}-pct-${row.donePercent}`}
+                              disabled={saving}
+                              onBlur={(e) => {
+                                const donePercent = Number(e.target.value);
+                                if (!Number.isFinite(donePercent) || donePercent === Number(row.donePercent || 0)) return;
+                                savePartProgress(plan, row, { donePercent });
+                              }}
+                            />
+                            <select
+                              className={compactSelect}
+                              value={row.status || "PENDING"}
+                              disabled={saving}
+                              onChange={(e) => savePartProgress(plan, row, { status: e.target.value })}
+                            >
+                              {PART_STATUSES.map((item) => (
+                                <option key={item.value} value={item.value}>{item.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        ) : (
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${partStatusClass(row.status)}`}>
+                            {PART_STATUSES.find((item) => item.value === row.status)?.label || "Pending"}
+                          </span>
+                        )}
                       </div>
                     ))
                 ) : (

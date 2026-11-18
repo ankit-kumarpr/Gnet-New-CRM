@@ -4,7 +4,7 @@ import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { cn } from "../../utils/cn";
 
 const selectClass =
-  "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+  "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 
 /**
  * Searchable employee select — loads a small page from API instead of all employees.

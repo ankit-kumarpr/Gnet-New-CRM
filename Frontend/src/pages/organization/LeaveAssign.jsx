@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
-const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 const filterSelectClass = `${selectClass} lg:w-56 lg:shrink-0`;
 
 function personLabel(person) {
@@ -141,7 +141,7 @@ export function LeaveAssign() {
                     <div className="flex items-center justify-end gap-2">
                       {canEdit && (
                         <Button variant="ghost" size="icon" title="Edit" onClick={() => { setSelected(row.employee?._id || ""); setIsModalOpen(true); }}>
-                          <Edit2 className="h-4 w-4 text-slate-500 hover:text-emerald-600" />
+                          <Edit2 className="h-4 w-4 text-slate-500 hover:text-[#3569A8]" />
                         </Button>
                       )}
                       {canDelete && (

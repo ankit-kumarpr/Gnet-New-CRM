@@ -1,4 +1,4 @@
-const ACTION_PREFIX = /^(VIEW|CREATE|EDIT|DELETE|PUNCH|APPROVE)_(.+)$/;
+const ACTION_PREFIX = /^(VIEW|CREATE|EDIT|DELETE|PUNCH|APPROVE|SEND)_(.+)$/;
 
 const DEFAULT_CLIENT_PERMISSIONS = ["VIEW_OFFER_BANNERS"];
 
@@ -61,6 +61,9 @@ const permissionGranted = (user, required) => {
             }
             if (moduleKey === "CHAT_GROUPS" && granted.has("MANAGE_CHAT")) return true;
             if (moduleKey === "LEAVE_QUEUE" && granted.has("APPROVE_LEAVE")) return true;
+            // SEND_CLIENT_MAILS is covered by MANAGE_EMAIL_TEMPLATES
+            if (moduleKey === "CLIENT_MAILS" && granted.has("MANAGE_EMAIL_TEMPLATES")) return true;
+            if (moduleKey === "EMAIL_TEMPLATES" && granted.has("MANAGE_EMAIL_TEMPLATES")) return true;
         }
         return false;
     });

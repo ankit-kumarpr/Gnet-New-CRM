@@ -41,7 +41,7 @@ export function serviceIconTone(name = "") {
   if (/smm|social/.test(text)) return "bg-sky-50 text-sky-700 border-sky-200";
   if (/seo/.test(text)) return "bg-violet-50 text-violet-700 border-violet-200";
   if (/ads|ppc|campaign|meta/.test(text)) return "bg-amber-50 text-amber-800 border-amber-200";
-  if (/website|web|site/.test(text)) return "bg-emerald-50 text-emerald-800 border-emerald-200";
+  if (/website|web|site/.test(text)) return "bg-[#EAF1FA] text-[#1E416B] border-[#3569A8]/30";
   if (/app|mobile/.test(text)) return "bg-indigo-50 text-indigo-700 border-indigo-200";
   if (/design|ui|ux|brand/.test(text)) return "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200";
   return "bg-slate-50 text-slate-700 border-slate-200";

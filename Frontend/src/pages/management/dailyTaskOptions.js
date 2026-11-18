@@ -59,7 +59,7 @@ export const priorityLabel = (priority) => TASK_PRIORITIES.find((item) => item.v
 
 export const statusClass = (status) => ({
   PENDING: "bg-amber-50 text-amber-800",
-  DONE: "bg-emerald-50 text-emerald-800",
+  DONE: "bg-[#EAF1FA] text-[#1E416B]",
   PARTIAL: "bg-orange-50 text-orange-800",
   HOLD: "bg-slate-100 text-slate-700",
 }[status] || "bg-slate-100 text-slate-700");

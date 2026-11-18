@@ -300,6 +300,7 @@ const withPeople = (query) => query
     .populate("serviceAssignments.employee", "name")
     .populate("reportingManager", "name")
     .populate("workingEmployees", "name")
+    .populate("heldBy", "name")
     .populate("createdBy", "name");
 
 const createProject = async (req, res, next) => {
@@ -525,7 +526,16 @@ const updateProjectStatus = async (req, res, next) => {
             return res.status(403).json({ success: false, message: "You cannot update this project status" });
         }
 
-        const previous = project.status;
+        const previous = project.status || "START";
+        if (status === "HOLD" && previous !== "HOLD") {
+            project.heldAt = new Date();
+            project.heldBy = req.user._id;
+            project.statusBeforeHold = STATUSES.includes(previous) && previous !== "HOLD" ? previous : "WORKING";
+        } else if (previous === "HOLD" && status !== "HOLD") {
+            project.heldAt = null;
+            project.heldBy = null;
+            project.statusBeforeHold = null;
+        }
         project.status = status;
         await project.save();
         if (status === "PENDING" && previous !== "PENDING") {

@@ -4,7 +4,7 @@ import { Input } from "../../components/ui/Input";
 import { cn } from "../../utils/cn";
 
 const selectClass =
-  "h-8 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+  "h-8 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 
 export const defaultQuantityPlan = () => ({
   mode: "QUANTITY",

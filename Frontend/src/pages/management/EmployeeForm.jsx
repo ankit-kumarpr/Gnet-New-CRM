@@ -158,11 +158,11 @@ export function EmployeeForm() {
     e.preventDefault();
     const filledRows = documentRows.filter((row) => row.name.trim() || row.file);
     if (filledRows.some((row) => !row.name.trim() || !row.file)) {
-      toast.error("Har document ka naam aur file dono chahiye");
+      toast.error("Each document needs both a name and a file");
       return;
     }
     if (filledRows.some((row) => row.name.trim().length > 80)) {
-      toast.error("Document name 80 characters se chhota hona chahiye");
+      toast.error("Document name must be under 80 characters");
       return;
     }
     if (!/^[0-9]{10}$/.test(formData.phone)) {
@@ -175,7 +175,7 @@ export function EmployeeForm() {
     }
     const keptDocuments = existingDocuments.filter((doc) => !removedDocumentIds.includes(doc._id));
     if (keptDocuments.length + filledRows.length > 8) {
-      toast.error("Ek employee par 8 documents tak add ho sakte hain");
+      toast.error("You can add up to 8 documents per employee");
       return;
     }
 
@@ -277,7 +277,7 @@ export function EmployeeForm() {
                 </div>
                 {!isEditMode && (
                   <p className="mt-1 text-xs text-slate-500">
-                    Save pe Employee ID + email + password is email par welcome mail jayegi.
+                    On save, a welcome email with Employee ID, email, and password is sent to this address.
                   </p>
                 )}
               </div>
@@ -295,7 +295,7 @@ export function EmployeeForm() {
                   onChange={handleChange}
                   required
                   disabled={isLoading}
-                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#3569A8] focus:outline-none focus:ring-1 focus:ring-[#3569A8]"
                 >
                   <option value="">Select a department</option>
                   {departments.map((dept) => (
@@ -311,7 +311,7 @@ export function EmployeeForm() {
                   onChange={handleChange}
                   required
                   disabled={isLoading || !formData.department}
-                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:bg-slate-100 disabled:text-slate-400"
+                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#3569A8] focus:outline-none focus:ring-1 focus:ring-[#3569A8] disabled:bg-slate-100 disabled:text-slate-400"
                 >
                   <option value="">Select a designation</option>
                   {designations.map((desig) => (
@@ -321,7 +321,7 @@ export function EmployeeForm() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Employee type *</label>
-                <select name="employeeType" value={formData.employeeType} onChange={handleChange} required disabled={isLoading} className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                <select name="employeeType" value={formData.employeeType} onChange={handleChange} required disabled={isLoading} className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#3569A8] focus:outline-none focus:ring-1 focus:ring-[#3569A8]">
                   <option value="">Select employee type</option>
                   {employeeTypes.map((item) => (
                     <option key={item._id} value={item._id}>{item.name}</option>
@@ -330,7 +330,7 @@ export function EmployeeForm() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Work mode *</label>
-                <select name="workMode" value={formData.workMode} onChange={handleChange} required disabled={isLoading} className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                <select name="workMode" value={formData.workMode} onChange={handleChange} required disabled={isLoading} className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#3569A8] focus:outline-none focus:ring-1 focus:ring-[#3569A8]">
                   <option value="">Select work mode</option>
                   {workModes.map((item) => (
                     <option key={item._id} value={item._id}>{item.name}</option>
@@ -405,7 +405,7 @@ export function EmployeeForm() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-lg font-medium text-slate-900">Documents</h3>
-                <p className="text-sm text-slate-500 mt-1">Optional. Document ka naam likho aur PDF ya image attach karo. Files Cloudinary par save hongi.</p>
+                <p className="text-sm text-slate-500 mt-1">Optional. Enter a document name and attach a PDF or image. Files are saved to Cloudinary.</p>
               </div>
               <Button type="button" variant="outline" className="gap-2" onClick={addDocumentRow} disabled={isLoading}>
                 <Plus className="h-4 w-4" />
@@ -418,15 +418,15 @@ export function EmployeeForm() {
                 {existingDocuments
                   .filter((doc) => !removedDocumentIds.includes(doc._id))
                   .map((doc) => (
-                    <div key={doc._id} className="flex items-center gap-3 rounded-lg border border-emerald-100 bg-white px-3 py-3">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+                    <div key={doc._id} className="flex items-center gap-3 rounded-lg border border-[#E5EAF1] bg-white px-3 py-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#EAF1FA] text-[#3569A8]">
                         <FileText className="h-5 w-5" />
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-slate-900">{doc.name}</p>
                         <p className="text-xs uppercase tracking-wide text-slate-400">{doc.format || doc.resourceType || "file"}</p>
                       </div>
-                      <a href={doc.url} target="_blank" rel="noreferrer" className="rounded-md p-2 text-emerald-700 hover:bg-emerald-50" title="View">
+                      <a href={doc.url} target="_blank" rel="noreferrer" className="rounded-md p-2 text-[#3569A8] hover:bg-[#EAF1FA]" title="View">
                         <ExternalLink className="h-4 w-4" />
                       </a>
                       <button
@@ -445,7 +445,7 @@ export function EmployeeForm() {
 
             {documentRows.length === 0 && existingDocuments.filter((doc) => !removedDocumentIds.includes(doc._id)).length === 0 && (
               <p className="rounded-lg border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500">
-                Koi document add nahi kiya. Employee bina documents ke bhi save ho sakta hai.
+                No documents added. Employees can also be saved without documents.
               </p>
             )}
 

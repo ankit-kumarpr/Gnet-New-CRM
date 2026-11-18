@@ -22,7 +22,7 @@ const generateIds = async (prefix, count) => {
     const counter = await Counter.findOneAndUpdate(
         { id: prefix },
         { $inc: { seq: n } },
-        { new: true, upsert: true }
+        { returnDocument: "after", upsert: true }
     );
     const end = counter.seq;
     const start = end - n + 1;

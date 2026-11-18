@@ -14,9 +14,9 @@ import { ProjectStatusControl } from "./ProjectStatus";
 import { ServiceWorkPlanEditor, suggestPlanForService } from "./ServiceWorkPlanEditor";
 import { cn } from "../../utils/cn";
 
-const selectClass = "h-9 w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
-const compactSelectClass = "h-8 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
-const textAreaClass = "flex w-full rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-50";
+const selectClass = "h-9 w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
+const compactSelectClass = "h-8 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
+const textAreaClass = "flex w-full rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#3569A8] disabled:cursor-not-allowed disabled:opacity-50";
 
 const emptyForm = {
   name: "",
@@ -167,22 +167,36 @@ export function Projects() {
     setShowForm(true);
   };
 
-  const openEdit = (row) => {
+  const fillEdit = (row) => {
     setSelected(row);
     const services = row.serviceAssignments?.length
-      ? row.serviceAssignments.map((item) => item.service)
-      : (row.services || []);
+      ? row.serviceAssignments.map((item) => item.service).filter(Boolean)
+      : (row.services || []).filter(Boolean);
     setForm({
       name: row.name || "",
       description: row.description || "",
-      client: row.client?._id || "",
+      client: String(row.client?._id || row.client || ""),
       serviceAssignments: assignmentRows(services, row.serviceAssignments, toDateInput(row.eod)),
-      reportingManager: row.reportingManager?._id || "",
+      reportingManager: String(row.reportingManager?._id || row.reportingManager || ""),
       priority: row.priority || "MEDIUM",
       eod: toDateInput(row.eod),
       remark: row.remark || "",
     });
     setShowForm(true);
+    window.setTimeout(() => {
+      document.getElementById("project-edit-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
+
+  const openEdit = async (row) => {
+    if (!row?._id) return;
+    try {
+      const res = await api.get(`/admin/projects/details/${row._id}`);
+      fillEdit(res.data.data || row);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to open project for edit");
+      fillEdit(row);
+    }
   };
 
   useEffect(() => {
@@ -191,7 +205,7 @@ export function Projects() {
     const open = async () => {
       try {
         const res = await api.get(`/admin/projects/details/${editId}`);
-        openEdit(res.data.data);
+        fillEdit(res.data.data);
         navigate("/dashboard/projects", { replace: true, state: null });
       } catch (error) {
         toast.error(error.response?.data?.message || "Failed to open project");
@@ -372,7 +386,7 @@ export function Projects() {
       </div>
 
       {showForm && (selected ? canEdit : canCreate) && (
-        <form onSubmit={save} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <form id="project-edit-form" onSubmit={save} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">{selected ? "Edit project" : "Add project"}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <div className="sm:col-span-2">
@@ -413,7 +427,7 @@ export function Projects() {
           <div className="space-y-3">
             <div>
               <p className="text-sm font-medium text-slate-700">Service assignments *</p>
-              <p className="mt-0.5 text-xs text-slate-500">Har service pe employee, EOD aur work detail. Project EOD default hai — service pe alag EOD set kar sakte ho.</p>
+              <p className="mt-0.5 text-xs text-slate-500">Assign an employee, EOD, and work detail per service. Project EOD is the default — you can set a different EOD per service.</p>
             </div>
             {!form.client ? (
               <p className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">Select a client to load their services.</p>
@@ -539,7 +553,7 @@ export function Projects() {
               ) : rows.map((row) => (
                 <tr key={row._id} className="hover:bg-slate-50">
                   <td className="px-4 py-3 text-sm">
-                    <button type="button" className="text-left font-medium text-slate-900 hover:text-emerald-700" onClick={() => navigate(`/dashboard/projects/${row._id}`)}>{row.name}</button>
+                    <button type="button" className="text-left font-medium text-slate-900 hover:text-[#3569A8]" onClick={() => navigate(`/dashboard/projects/${row._id}`)}>{row.name}</button>
                     {assignmentHint(row) && (
                       <p className="mt-0.5 text-xs text-slate-500">{assignmentHint(row)}</p>
                     )}
@@ -558,9 +572,9 @@ export function Projects() {
                   <td className="px-4 py-3 text-sm text-slate-700">{workingLabel(row)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" title="View" onClick={() => navigate(`/dashboard/projects/${row._id}`)}><Eye className="h-4 w-4 text-slate-500" /></Button>
-                      {canEdit && <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(row)}><Edit2 className="h-4 w-4 text-slate-500" /></Button>}
-                      {canDelete && <Button variant="ghost" size="icon" title="Delete" onClick={() => remove(row)}><Trash2 className="h-4 w-4 text-red-500" /></Button>}
+                      <Button type="button" variant="ghost" size="icon" title="View" onClick={() => navigate(`/dashboard/projects/${row._id}`)}><Eye className="h-4 w-4 text-slate-500" /></Button>
+                      {canEdit && <Button type="button" variant="ghost" size="icon" title="Edit" onClick={() => openEdit(row)}><Edit2 className="h-4 w-4 text-slate-500" /></Button>}
+                      {canDelete && <Button type="button" variant="ghost" size="icon" title="Delete" onClick={() => remove(row)}><Trash2 className="h-4 w-4 text-red-500" /></Button>}
                     </div>
                   </td>
                 </tr>

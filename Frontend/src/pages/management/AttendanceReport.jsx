@@ -7,7 +7,7 @@ import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { formatDate, formatDateTime } from "./leadOptions";
 
-const selectClass = "h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+const selectClass = "h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 
 const shotTime = (shot) => (shot?.at ? formatDateTime(shot.at) : "—");
 

@@ -117,7 +117,7 @@ export function Clients() {
   const [form, setForm] = useState({ ...emptyForm, address: { ...emptyAddress } });
   const [exporting, setExporting] = useState(false);
   const debouncedSearch = useDebouncedValue(search, 300);
-  const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+  const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 
   const load = async () => {
     try {
@@ -151,7 +151,7 @@ export function Clients() {
     const open = async () => {
       try {
         const res = await api.get(`/admin/clients/details/${editId}`);
-        openEdit(res.data.data);
+        fillEdit(res.data.data);
         navigate("/dashboard/clients", { replace: true, state: null });
       } catch (error) {
         toast.error(error.response?.data?.message || "Failed to open client");
@@ -176,7 +176,7 @@ export function Clients() {
     setShowForm(true);
   };
 
-  const openEdit = (row) => {
+  const fillEdit = (row) => {
     setSelected(row);
     setForm({
       name: row.name || "",
@@ -185,11 +185,32 @@ export function Clients() {
       whatsapp: row.whatsapp || "",
       address: { ...emptyAddress, ...(row.address || {}) },
       remark: row.remark || "",
-      services: (row.services || []).map((service) => service._id),
-      reportingManager: row.reportingManager?._id || "",
+      services: (row.services || [])
+        .map((service) => String(service?._id || service || ""))
+        .filter(Boolean),
+      reportingManager: row.reportingManager?._id
+        ? String(row.reportingManager._id)
+        : row.reportingManager
+          ? String(row.reportingManager)
+          : "",
       payments: paymentsFromClient(row),
     });
+    setShowBulk(false);
     setShowForm(true);
+    window.setTimeout(() => {
+      document.getElementById("client-edit-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
+
+  const openEdit = async (row) => {
+    if (!row?._id) return;
+    try {
+      const res = await api.get(`/admin/clients/details/${row._id}`);
+      fillEdit(res.data.data || row);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to open client for edit");
+      fillEdit(row);
+    }
   };
 
   const setPaymentField = (index, name, value) => {
@@ -218,9 +239,9 @@ export function Clients() {
   const toggleService = (id) => {
     setForm((current) => ({
       ...current,
-      services: current.services.includes(id)
-        ? current.services.filter((item) => item !== id)
-        : [...current.services, id],
+      services: current.services.map(String).includes(String(id))
+        ? current.services.filter((item) => String(item) !== String(id))
+        : [...current.services, String(id)],
     }));
   };
 
@@ -437,7 +458,7 @@ export function Clients() {
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Bulk add clients</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Sample download karo, 50–100 clients fill karo, upload kar do. Sample row skip hoti hai. Welcome mail nahi jati — login password client ID hota hai.
+              Download the sample, fill 50–100 clients, then upload. The sample row is skipped. Welcome email is not sent — login password is the client ID.
             </p>
           </div>
           <FilePicker
@@ -468,7 +489,7 @@ export function Clients() {
       )}
 
       {showForm && (selected ? canEdit : canCreate) && (
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <form id="client-edit-form" onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">{selected ? "Edit client" : "Add client"}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <div>
@@ -478,7 +499,7 @@ export function Clients() {
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
               <Input type="email" value={form.email} onChange={(event) => setField("email", event.target.value)} disabled={saving} placeholder="client@email.com" />
-              <p className="mt-1 text-xs text-slate-500">Optional — dilaye to login mail isi email par jayegi.</p>
+              <p className="mt-1 text-xs text-slate-500">Optional — if provided, the login welcome mail is sent to this email.</p>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Phone number *</label>
@@ -519,7 +540,7 @@ export function Clients() {
               rows={3}
               disabled={saving}
               onChange={(event) => setField("remark", event.target.value)}
-              className="flex w-full rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#3569A8] disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
@@ -541,7 +562,7 @@ export function Clients() {
                 {form.payments.map((row, index) => (
                   <div
                     key={row._id || index}
-                    className={`grid gap-3 rounded-md border p-3 sm:grid-cols-2 lg:grid-cols-4 ${row.paid ? "border-emerald-200 bg-emerald-50/60" : "border-slate-200 bg-white"}`}
+                    className={`grid gap-3 rounded-md border p-3 sm:grid-cols-2 lg:grid-cols-4 ${row.paid ? "border-[#3569A8]/30 bg-[#EAF1FA]/60" : "border-slate-200 bg-white"}`}
                   >
                     <div>
                       <label className="mb-1 block text-xs font-medium text-slate-600">Payment date *</label>
@@ -573,7 +594,7 @@ export function Clients() {
                         onChange={(event) => setPaymentField(index, "note", event.target.value)}
                         disabled={saving || row.paid}
                       />
-                      {row.paid ? <p className="mt-1 text-xs font-medium text-emerald-700">Paid — alerts stopped</p> : null}
+                      {row.paid ? <p className="mt-1 text-xs font-medium text-[#3569A8]">Paid — alerts stopped</p> : null}
                     </div>
                     <div className="flex items-end">
                       <Button type="button" variant="outline" className="w-full text-red-600" onClick={() => removePaymentRow(index)} disabled={saving}>
@@ -597,7 +618,7 @@ export function Clients() {
                   <label key={service._id} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700">
                     <input
                       type="checkbox"
-                      checked={form.services.includes(service._id)}
+                      checked={form.services.map(String).includes(String(service._id))}
                       onChange={() => toggleService(service._id)}
                       disabled={saving}
                     />
@@ -688,7 +709,7 @@ export function Clients() {
               ) : rows.map((row) => (
                 <tr key={row._id} className="transition-colors hover:bg-slate-50">
                   <td className="px-6 py-4 text-sm">
-                    <button type="button" className="text-left font-medium text-slate-900 hover:text-emerald-700" onClick={() => navigate(`/dashboard/clients/${row._id}`)}>{row.name}</button>
+                    <button type="button" className="text-left font-medium text-slate-900 hover:text-[#3569A8]" onClick={() => navigate(`/dashboard/clients/${row._id}`)}>{row.name}</button>
                     {row.email && <div className="text-slate-500">{row.email}</div>}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-700">{row.phone}</td>
@@ -707,16 +728,16 @@ export function Clients() {
                   <td className="px-6 py-4 text-sm text-slate-700">{(row.services || []).map((service) => service.name).join(", ") || "—"}</td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="icon" title="View" onClick={() => navigate(`/dashboard/clients/${row._id}`)}>
-                        <Eye className="h-4 w-4 text-slate-500 hover:text-emerald-600" />
+                      <Button type="button" variant="ghost" size="icon" title="View" onClick={() => navigate(`/dashboard/clients/${row._id}`)}>
+                        <Eye className="h-4 w-4 text-slate-500 hover:text-[#3569A8]" />
                       </Button>
                       {canEdit && (
-                        <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(row)}>
-                          <Edit2 className="h-4 w-4 text-slate-500 hover:text-emerald-600" />
+                        <Button type="button" variant="ghost" size="icon" title="Edit" onClick={() => openEdit(row)}>
+                          <Edit2 className="h-4 w-4 text-slate-500 hover:text-[#3569A8]" />
                         </Button>
                       )}
                       {canDelete && (
-                        <Button variant="ghost" size="icon" title="Delete" onClick={() => handleDelete(row)}>
+                        <Button type="button" variant="ghost" size="icon" title="Delete" onClick={() => handleDelete(row)}>
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                       )}

@@ -9,19 +9,25 @@ const PORT = process.env.PORT || 5000;
 
 const server = http.createServer(app);
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
-    : ["http://localhost:3000", "http://localhost:5173"];
+const normalizeOrigin = (value) => String(value || "").trim().replace(/\/$/, "");
+const allowedOrigins = new Set(
+    (process.env.ALLOWED_ORIGINS || "http://localhost:3000,http://localhost:5173")
+        .split(",")
+        .map(normalizeOrigin)
+        .filter(Boolean)
+);
+if (process.env.FRONTEND_URL) allowedOrigins.add(normalizeOrigin(process.env.FRONTEND_URL));
 
 const io = new Server(server, {
     cors: {
         origin: (origin, callback) => {
             if (!origin) return callback(null, true);
-            if (allowedOrigins.includes(origin)) return callback(null, true);
-            if (process.env.NODE_ENV !== "production" && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+            const normalized = normalizeOrigin(origin);
+            if (allowedOrigins.has(normalized)) return callback(null, true);
+            if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalized)) {
                 return callback(null, true);
             }
-            return callback(new Error("CORS blocked"));
+            return callback(null, false);
         },
         credentials: true,
     },

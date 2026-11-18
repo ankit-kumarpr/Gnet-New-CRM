@@ -24,7 +24,7 @@ function ToolButton({ active, disabled, label, onClick, children }) {
       onClick={onClick}
       className={cn(
         "rounded px-2 py-1 text-slate-600 hover:bg-white hover:text-slate-900 disabled:opacity-40",
-        active && "bg-white text-emerald-700 shadow-sm"
+        active && "bg-white text-[#3569A8] shadow-sm"
       )}
     >
       {children}

@@ -6,7 +6,7 @@ import { Button } from "../../components/ui/Button";
 import { plainRichText, richHtmlClass } from "../../components/ui/RichText";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
-import { formatDate, priorityClass, priorityLabel } from "./projectOptions";
+import { formatDate, formatDateTime, priorityClass, priorityLabel } from "./projectOptions";
 import { ProjectStatusControl } from "./ProjectStatus";
 import { ClientWorkPlans } from "./ClientWorkPlans";
 import { cn } from "../../utils/cn";
@@ -75,16 +75,16 @@ export function ProjectView() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
-        <div className="bg-gradient-to-r from-emerald-950 via-emerald-800 to-teal-600 px-6 py-8 text-white">
+      <div className="overflow-hidden rounded-3xl border border-[#E5EAF1] bg-white shadow-sm">
+        <div className="bg-gradient-to-r from-[#102238] via-[#142B4A] to-[#1E416B] px-6 py-8 text-white">
           <h2 className="text-2xl font-semibold">{project.name}</h2>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className={cn("inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold", priorityClass(project.priority))}>{priorityLabel(project.priority)}</span>
-            <ProjectStatusControl project={project} onUpdated={setProject} />
+            <ProjectStatusControl project={project} onUpdated={setProject} onDark />
           </div>
         </div>
         <div className="grid gap-3 px-6 py-5 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          <p className="flex items-start gap-2"><Building2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />Client {project.client?.name || "—"}</p>
+          <p className="flex items-start gap-2"><Building2 className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />Client {project.client?.name || "—"}</p>
           <div className="sm:col-span-2 lg:col-span-2 xl:col-span-3">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Services</p>
             {serviceList.length === 0 ? (
@@ -110,13 +110,20 @@ export function ProjectView() {
               </div>
             )}
           </div>
-          <p className="flex items-start gap-2"><UserRound className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />Reporting {project.reportingManager?.name || "—"}</p>
-          <p className="flex items-start gap-2"><Calendar className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />EOD {formatDate(project.eod)}</p>
-          <p className="flex items-start gap-2 sm:col-span-2 lg:col-span-3 xl:col-span-4"><Users className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{workers.length ? workers.join(", ") : "—"}</p>
+          <p className="flex items-start gap-2"><UserRound className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />Reporting {project.reportingManager?.name || "—"}</p>
+          <p className="flex items-start gap-2"><Calendar className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />EOD {formatDate(project.eod)}</p>
+          {project.status === "HOLD" && project.heldAt && (
+            <p className="flex items-start gap-2 text-orange-700">
+              <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" />
+              On hold since {formatDateTime(project.heldAt)}
+              {project.heldBy?.name ? ` · by ${project.heldBy.name}` : ""}
+            </p>
+          )}
+          <p className="flex items-start gap-2 sm:col-span-2 lg:col-span-3 xl:col-span-4"><Users className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{workers.length ? workers.join(", ") : "—"}</p>
         </div>
       </div>
 
-      <section className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-slate-900">Service assignments</h3>
         {assignments.length === 0 ? (
           <p className="mt-3 text-sm text-slate-500">No service assignments yet.</p>
@@ -134,7 +141,7 @@ export function ProjectView() {
                       </span>
                       {serviceName}
                     </p>
-                    <p className="text-sm font-medium text-emerald-700">{row.employee?.name || "Unassigned"}</p>
+                    <p className="text-sm font-medium text-[#3569A8]">{row.employee?.name || "Unassigned"}</p>
                   </div>
                   <p className="mt-1 text-xs text-slate-500">EOD {formatDate(row.eod || project.eod)}</p>
                   <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{row.work || "—"}</p>
@@ -145,7 +152,7 @@ export function ProjectView() {
         )}
       </section>
 
-      <section className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-slate-900">Description</h3>
         {plainRichText(project.description) ? (
           <div className={cn("mt-3 text-sm text-slate-900", richHtmlClass)} dangerouslySetInnerHTML={{ __html: project.description }} />
@@ -154,7 +161,7 @@ export function ProjectView() {
         )}
       </section>
 
-      <section className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-slate-900">Remark</h3>
         <p className="mt-3 whitespace-pre-wrap text-sm text-slate-900">{project.remark || "—"}</p>
       </section>

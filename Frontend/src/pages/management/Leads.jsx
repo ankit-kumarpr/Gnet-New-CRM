@@ -13,7 +13,7 @@ import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { LEAD_SOURCES, LEAD_STATUSES, canDeleteLead, canEditLead, canFollowLead, followUpTone, formatDate, isClosedLead, leadLabel, statusClass } from "./leadOptions";
 import { cn } from "../../utils/cn";
 
-const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 const digits = (value, max) => value.replace(/\D/g, "").slice(0, max);
 
 const emptyForm = {
@@ -84,19 +84,32 @@ export function Leads() {
     setShowForm(true);
   };
 
-  const openEdit = (row) => {
-    setSelected(row);
+  const openEdit = async (row) => {
+    if (!row?._id) return;
+    let data = row;
+    try {
+      const res = await api.get(`/admin/leads/details/${row._id}`);
+      data = res.data.data || row;
+    } catch {
+      // fall back to table row
+    }
+    setSelected(data);
     setForm({
-      name: row.name || "",
-      phone: row.phone || "",
-      companyName: row.companyName || "",
-      address: row.address || "",
-      source: row.source || "GMB",
-      services: (row.services || []).map((service) => service._id),
-      remark: row.remark || "",
-      assignedTo: row.assignedTo?._id || "",
+      name: data.name || "",
+      phone: data.phone || "",
+      companyName: data.companyName || "",
+      address: data.address || "",
+      source: data.source || "GMB",
+      services: (data.services || [])
+        .map((service) => String(service?._id || service || ""))
+        .filter(Boolean),
+      remark: data.remark || "",
+      assignedTo: String(data.assignedTo?._id || data.assignedTo || ""),
     });
     setShowForm(true);
+    window.setTimeout(() => {
+      document.getElementById("lead-edit-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   };
 
   useEffect(() => {
@@ -334,7 +347,7 @@ export function Leads() {
       )}
 
       {showForm && (selected ? canEditLead(user, selected) : canCreate) && (
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <form id="lead-edit-form" onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">{selected ? "Edit lead" : "Add lead"}</h2>
             {selected && <p className="mt-1 text-sm text-slate-500">Status and the next follow-up change from the Follow button.</p>}
@@ -382,7 +395,7 @@ export function Leads() {
               rows={3}
               disabled={saving}
               onChange={(event) => setField("remark", event.target.value)}
-              className="flex w-full rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#3569A8] disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
@@ -447,7 +460,7 @@ export function Leads() {
               ) : rows.map((row) => (
                 <tr key={row._id} className="transition-colors hover:bg-slate-50">
                   <td className="px-6 py-4 text-sm">
-                    <button type="button" className="text-left font-medium text-slate-900 hover:text-emerald-700" onClick={() => navigate(`/dashboard/leads/${row._id}`)}>{row.name}</button>
+                    <button type="button" className="text-left font-medium text-slate-900 hover:text-[#3569A8]" onClick={() => navigate(`/dashboard/leads/${row._id}`)}>{row.name}</button>
                     {row.companyName && <div className="text-slate-500">{row.companyName}</div>}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-700">{row.phone}</td>
@@ -476,21 +489,21 @@ export function Leads() {
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-700">{row.createdBy?.name || "—"}</td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="icon" title="View" onClick={() => navigate(`/dashboard/leads/${row._id}`)}>
-                        <Eye className="h-4 w-4 text-slate-500 hover:text-emerald-600" />
+                      <Button type="button" variant="ghost" size="icon" title="View" onClick={() => navigate(`/dashboard/leads/${row._id}`)}>
+                        <Eye className="h-4 w-4 text-slate-500 hover:text-[#3569A8]" />
                       </Button>
                       {canFollowLead(user, row) && (
-                        <Button variant="ghost" size="icon" title="Follow" onClick={() => navigate(`/dashboard/leads/${row._id}`, { state: { follow: true } })}>
-                          <PhoneCall className="h-4 w-4 text-emerald-600" />
+                        <Button type="button" variant="ghost" size="icon" title="Follow" onClick={() => navigate(`/dashboard/leads/${row._id}`, { state: { follow: true } })}>
+                          <PhoneCall className="h-4 w-4 text-[#3569A8]" />
                         </Button>
                       )}
                       {canEditLead(user, row) && (
-                        <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(row)}>
-                          <Edit2 className="h-4 w-4 text-slate-500 hover:text-emerald-600" />
+                        <Button type="button" variant="ghost" size="icon" title="Edit" onClick={() => openEdit(row)}>
+                          <Edit2 className="h-4 w-4 text-slate-500 hover:text-[#3569A8]" />
                         </Button>
                       )}
                       {canDeleteLead(user, row) && (
-                        <Button variant="ghost" size="icon" title="Delete" onClick={() => handleDelete(row)}>
+                        <Button type="button" variant="ghost" size="icon" title="Delete" onClick={() => handleDelete(row)}>
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                       )}

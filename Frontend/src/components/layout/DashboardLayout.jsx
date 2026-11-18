@@ -54,7 +54,7 @@ function DashboardShell() {
                   <X className="h-6 w-6 text-white" aria-hidden="true" />
                 </button>
               </div>
-              <div className="h-full w-full overflow-hidden bg-emerald-950">
+              <div className="h-full w-full overflow-hidden bg-[#142B4A]">
                 <Sidebar
                   variant="drawer"
                   collapsed={false}
@@ -71,7 +71,7 @@ function DashboardShell() {
 
       <div className={cn("flex min-h-screen flex-col transition-all duration-300 ease-in-out", !isMobile && (collapsed ? "pl-[72px]" : "pl-64"))}>
         <Header setMobileMenuOpen={setMobileMenuOpen} isMobile={isMobile} />
-        <main className={cn("flex-1", isChatPage ? "overflow-hidden p-0" : "px-4 py-8 sm:px-6 lg:px-8")}>
+        <main className={cn("flex-1 bg-[#F7F9FC]", isChatPage ? "overflow-hidden p-0" : "px-4 py-6 sm:px-6 lg:px-8")}>
           <Outlet />
         </main>
       </div>

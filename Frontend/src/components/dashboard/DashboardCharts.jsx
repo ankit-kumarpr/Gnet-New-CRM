@@ -2,15 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-const COLORS = ["#047857", "#0f766e", "#0369a1", "#b45309", "#475569", "#65a30d", "#0e7490", "#334155"];
+const COLORS = ["#142B4A", "#1E416B", "#3569A8", "#4285C5", "#718096", "#16A36A", "#E6A23C", "#26364A"];
 
 export function Panel({ title, subtitle, action, children }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <section className="rounded-[10px] border border-[#E5EAF1] bg-white p-4 shadow-sm sm:p-5">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
-          {subtitle && <p className="mt-1 max-w-xl text-xs leading-5 text-slate-500">{subtitle}</p>}
+          <h2 className="text-sm font-semibold text-[#26364A]">{title}</h2>
+          {subtitle && <p className="mt-1 max-w-xl text-xs leading-5 text-[#718096]">{subtitle}</p>}
         </div>
         {action}
       </div>
@@ -32,7 +32,7 @@ function RangeToggle({ value, onChange }) {
           type="button"
           aria-pressed={value === days}
           onClick={() => onChange(days)}
-          className={`rounded-md px-2.5 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-700 ${value === days ? "bg-emerald-700 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+          className={`rounded-[6px] px-2.5 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#3569A8] ${value === days ? "bg-[#142B4A] text-white" : "text-[#718096] hover:bg-[#EAF1FA]"}`}
         >
           {days} days
         </button>
@@ -62,8 +62,8 @@ export function AttendanceChart({ series }) {
               <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={tipStyle} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="present" name="Punched in" fill="#047857" radius={[3, 3, 0, 0]} maxBarSize={18} />
-              <Bar dataKey="onLeave" name="On leave" fill="#0f766e" radius={[3, 3, 0, 0]} maxBarSize={18} />
+              <Bar dataKey="present" name="Punched in" fill="#142B4A" radius={[3, 3, 0, 0]} maxBarSize={18} />
+              <Bar dataKey="onLeave" name="On leave" fill="#3569A8" radius={[3, 3, 0, 0]} maxBarSize={18} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -85,7 +85,7 @@ export function WorkforceChart({ rows }) {
             <Tooltip contentStyle={tipStyle} formatter={(value, _name, item) => [`${value} · ${item.payload.percent}%`, "Employees"]} />
             <Bar
               dataKey="count"
-              fill="#047857"
+              fill="#142B4A"
               radius={[0, 4, 4, 0]}
               barSize={14}
               cursor="pointer"
@@ -114,7 +114,7 @@ export function CompositionChart({ employeeTypes, workModes }) {
       action={hasTypes && hasModes ? (
         <div className="inline-flex rounded-lg border border-slate-200 p-0.5 text-xs font-medium">
           {[["type", "Type"], ["mode", "Work mode"]].map(([id, label]) => (
-            <button key={id} type="button" aria-pressed={kind === id} onClick={() => setKind(id)} className={`rounded-md px-2.5 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-700 ${kind === id ? "bg-emerald-700 text-white" : "text-slate-600 hover:bg-slate-50"}`}>{label}</button>
+            <button key={id} type="button" aria-pressed={kind === id} onClick={() => setKind(id)} className={`rounded-md px-2.5 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#3569A8] ${kind === id ? "bg-[#142B4A] text-white" : "text-slate-600 hover:bg-slate-50"}`}>{label}</button>
           ))}
         </div>
       ) : null}
@@ -164,7 +164,7 @@ export function LeaveChart({ leave }) {
               <Tooltip contentStyle={tipStyle} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar dataKey="pending" name="Pending" stackId="leave" fill="#d97706" maxBarSize={18} />
-              <Bar dataKey="approved" name="Approved" stackId="leave" fill="#047857" maxBarSize={18} />
+              <Bar dataKey="approved" name="Approved" stackId="leave" fill="#142B4A" maxBarSize={18} />
               <Bar dataKey="rejected" name="Rejected" stackId="leave" fill="#64748b" radius={[3, 3, 0, 0]} maxBarSize={18} />
             </BarChart>
           </ResponsiveContainer>
@@ -186,7 +186,7 @@ export function HiringChart({ rows }) {
               <XAxis dataKey="label" tick={{ fontSize: 12, fill: "#64748b" }} axisLine={false} tickLine={false} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={tipStyle} />
-              <Bar dataKey="count" name="Joined" fill="#047857" radius={[3, 3, 0, 0]} maxBarSize={28} />
+              <Bar dataKey="count" name="Joined" fill="#142B4A" radius={[3, 3, 0, 0]} maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>
         </div>

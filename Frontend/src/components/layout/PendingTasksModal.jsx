@@ -56,7 +56,7 @@ export function PendingTasksModal({ open, pending, partial, tasks, onClose }) {
               <Link
                 to="/dashboard/daily-tasks"
                 onClick={onClose}
-                className="inline-flex h-8 items-center rounded-md bg-emerald-700 px-3 text-xs font-medium text-white hover:bg-emerald-800"
+                className="inline-flex h-8 items-center rounded-md bg-[#142B4A] px-3 text-xs font-medium text-white hover:bg-[#102238]"
               >
                 Open tasks
               </Link>

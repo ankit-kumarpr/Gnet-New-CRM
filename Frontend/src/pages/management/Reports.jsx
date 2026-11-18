@@ -5,7 +5,7 @@ import { Input } from "../../components/ui/Input";
 import { Pager } from "../../components/ui/Pager";
 import api from "../../services/api";
 
-const selectClass = "h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+const selectClass = "h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 
 const FILTER_KEYS = ["employee", "assigned", "source", "service", "status", "priority", "project", "manager", "department", "leaveType", "interviewer", "overdue", "bucket", "search"];
 
@@ -141,7 +141,7 @@ export function Reports() {
       {report?.summary?.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {report.summary.map((item) => (
-            <div key={item.label} className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+            <div key={item.label} className="rounded-2xl border border-[#E5EAF1] bg-white p-4 shadow-sm">
               <p className="text-sm text-slate-500">{item.label}</p>
               <p className="mt-1 text-xl font-semibold text-slate-900">{item.value}</p>
             </div>

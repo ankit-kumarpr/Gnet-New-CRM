@@ -12,7 +12,7 @@ import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { INTERVIEW_STATUSES, formatDate, interviewLabel, interviewStatusClass, toDateInput } from "./interviewOptions";
 import { cn } from "../../utils/cn";
 
-const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 const digits = (value, max) => value.replace(/\D/g, "").slice(0, max);
 
 const emptyForm = {
@@ -91,23 +91,34 @@ export function Interviews() {
     setShowForm(true);
   };
 
-  const openEdit = (row) => {
-    setSelected(row);
+  const openEdit = async (row) => {
+    if (!row?._id) return;
+    let data = row;
+    try {
+      const res = await api.get(`/admin/interviews/details/${row._id}`);
+      data = res.data.data || row;
+    } catch {
+      // fall back to table row
+    }
+    setSelected(data);
     setForm({
-      candidateName: row.candidateName || "",
-      phone: row.phone || "",
-      email: row.email || "",
-      role: row.role || "",
-      round: row.round || "",
-      interviewDate: toDateInput(row.interviewDate),
-      status: row.status || "SCHEDULED",
-      interviewer: row.interviewer?._id || "",
-      note: row.note || "",
-      nextRoundDate: toDateInput(row.nextRoundDate),
+      candidateName: data.candidateName || "",
+      phone: data.phone || "",
+      email: data.email || "",
+      role: data.role || "",
+      round: data.round || "",
+      interviewDate: toDateInput(data.interviewDate),
+      status: data.status || "SCHEDULED",
+      interviewer: String(data.interviewer?._id || data.interviewer || ""),
+      note: data.note || "",
+      nextRoundDate: toDateInput(data.nextRoundDate),
       file: null,
       removeResume: false,
     });
     setShowForm(true);
+    window.setTimeout(() => {
+      document.getElementById("interview-edit-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   };
 
   useEffect(() => {
@@ -228,7 +239,7 @@ export function Interviews() {
       </div>
 
       {showForm && (selected ? canEdit : canCreate) && (
-        <form onSubmit={save} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <form id="interview-edit-form" onSubmit={save} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">{selected ? "Edit interview" : "Schedule interview"}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <div>
@@ -284,7 +295,7 @@ export function Interviews() {
               rows={3}
               disabled={saving}
               onChange={(event) => setField("note", event.target.value)}
-              className="flex w-full rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#3569A8] disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
           <div>
@@ -354,7 +365,7 @@ export function Interviews() {
               ) : rows.map((row) => (
                 <tr key={row._id} className="hover:bg-slate-50">
                   <td className="px-4 py-3 text-sm">
-                    <button type="button" className="text-left font-medium text-slate-900 hover:text-emerald-700" onClick={() => navigate(`/dashboard/interviews/${row._id}`)}>{row.candidateName}</button>
+                    <button type="button" className="text-left font-medium text-slate-900 hover:text-[#3569A8]" onClick={() => navigate(`/dashboard/interviews/${row._id}`)}>{row.candidateName}</button>
                     <div className="text-slate-500">{row.phone}</div>
                     {row.email ? <div className="text-slate-400">{row.email}</div> : null}
                   </td>

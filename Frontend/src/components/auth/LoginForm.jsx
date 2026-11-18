@@ -87,7 +87,7 @@ export const LoginForm = () => {
   return (
     <div className="w-full auth-fade-up">
       <div className="mb-9">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700/80">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#3569A8]/80">
           Sign in
         </p>
         <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight text-slate-900 sm:text-[2.1rem]">
@@ -155,7 +155,7 @@ export const LoginForm = () => {
               </div>
               <a
                 href="#"
-                className="text-sm font-semibold text-emerald-700 transition-colors hover:text-emerald-800 focus:outline-none focus-visible:underline"
+                className="text-sm font-semibold text-[#3569A8] transition-colors hover:text-[#1E416B] focus:outline-none focus-visible:underline"
               >
                 Forgot password?
               </a>
@@ -165,7 +165,7 @@ export const LoginForm = () => {
 
         <Button
           type="submit"
-          className="group mt-1 h-12 w-full rounded-xl text-[15px] font-semibold tracking-wide shadow-md shadow-emerald-900/10 transition-all hover:shadow-lg hover:shadow-emerald-900/15"
+          className="group mt-1 h-12 w-full rounded-xl text-[15px] font-semibold tracking-wide shadow-md shadow-[#142B4A]/10 transition-all hover:shadow-lg hover:shadow-[#142B4A]/15"
           isLoading={isLoading}
         >
           {isLoading ? (

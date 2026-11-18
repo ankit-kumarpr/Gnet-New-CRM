@@ -81,7 +81,7 @@ export function ProfilePhotoEditor({
       ) : (
         <div
           className={cn(
-            "flex items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-300 font-semibold text-white shadow-md",
+            "flex items-center justify-center rounded-full bg-gradient-to-br from-[#1E416B] to-[#3569A8] font-semibold text-white shadow-md",
             dim,
           )}
         >
@@ -104,7 +104,7 @@ export function ProfilePhotoEditor({
             disabled={busy}
             title="Change photo"
             onClick={() => inputRef.current?.click()}
-            className="absolute -bottom-1 -right-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200 bg-white text-emerald-700 shadow-sm hover:bg-emerald-50 disabled:opacity-60"
+            className="absolute -bottom-1 -right-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#3569A8]/30 bg-white text-[#3569A8] shadow-sm hover:bg-[#EAF1FA] disabled:opacity-60"
           >
             <Camera className="h-4 w-4" />
           </button>

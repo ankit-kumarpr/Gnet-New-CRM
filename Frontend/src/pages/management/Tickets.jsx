@@ -13,7 +13,7 @@ import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { TICKET_PRIORITIES, TICKET_STATUSES, formatDateTime, ticketPriorityClass, ticketPriorityLabel, ticketStatusClass, ticketStatusLabel } from "./ticketOptions";
 import { cn } from "../../utils/cn";
 
-const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 
 const emptyForm = { subject: "", content: "", priority: "MEDIUM", file: null };
 
@@ -171,7 +171,7 @@ export function Tickets() {
               ) : rows.map((row) => (
                 <tr key={row._id} className="hover:bg-slate-50">
                   <td className="px-4 py-3 text-sm">
-                    <button type="button" className="text-left font-medium text-slate-900 hover:text-emerald-700" onClick={() => navigate(`/dashboard/help/${row._id}`)}>{row.subject}</button>
+                    <button type="button" className="text-left font-medium text-slate-900 hover:text-[#3569A8]" onClick={() => navigate(`/dashboard/help/${row._id}`)}>{row.subject}</button>
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-700">{row.raisedBy?.name || "—"}</td>
                   <td className="px-4 py-3"><span className={cn("inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium", ticketPriorityClass(row.priority))}>{ticketPriorityLabel(row.priority)}</span></td>

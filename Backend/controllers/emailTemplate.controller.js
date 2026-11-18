@@ -165,7 +165,7 @@ const updateEmailTemplate = async (req, res, next) => {
         const data = await EmailTemplate.findByIdAndUpdate(
             req.params.id,
             { ...fields, updatedBy: req.user._id },
-            { new: true },
+            { returnDocument: "after" },
         ).lean();
         if (!data) return res.status(404).json({ success: false, message: "Template not found" });
         res.status(200).json({ success: true, data, message: "Template updated" });

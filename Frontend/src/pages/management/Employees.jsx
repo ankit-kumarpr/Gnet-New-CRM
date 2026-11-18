@@ -124,7 +124,7 @@ export function Employees() {
         </div>
         
         <select 
-          className="h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent min-w-[150px]"
+          className="h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3569A8] focus:border-transparent min-w-[150px]"
           value={departmentFilter}
           onChange={(e) => {
             const value = e.target.value;
@@ -143,7 +143,7 @@ export function Employees() {
         </select>
 
         <select 
-          className="h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent min-w-[150px]"
+          className="h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3569A8] focus:border-transparent min-w-[150px]"
           value={designationFilter}
           onChange={(e) => { setDesignationFilter(e.target.value); setPage(1); }}
         >
@@ -192,7 +192,7 @@ export function Employees() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col">
                         <button type="button" className="text-left" onClick={() => navigate(`/dashboard/employees/${emp._id}`)}>
-                          <span className="text-sm font-medium text-emerald-700 hover:underline">{emp.name}</span>
+                          <span className="text-sm font-medium text-[#3569A8] hover:underline">{emp.name}</span>
                           <span className="block text-xs text-slate-500">ID: {emp.employeeId}</span>
                         </button>
                       </div>
@@ -228,11 +228,11 @@ export function Employees() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
                         <Button variant="ghost" size="icon" onClick={() => navigate(`/dashboard/employees/${emp._id}`)} title="Profile">
-                          <Eye className="h-4 w-4 text-slate-500 hover:text-emerald-600" />
+                          <Eye className="h-4 w-4 text-slate-500 hover:text-[#3569A8]" />
                         </Button>
                         {(hasPermission("MANAGE_EMPLOYEES") || hasPermission("EDIT_EMPLOYEES")) && (
                           <Button variant="ghost" size="icon" onClick={() => openEditPage(emp)} title="Edit">
-                            <Edit2 className="h-4 w-4 text-slate-500 hover:text-emerald-600" />
+                            <Edit2 className="h-4 w-4 text-slate-500 hover:text-[#3569A8]" />
                           </Button>
                         )}
                         {(hasPermission("MANAGE_EMPLOYEES") || hasPermission("DELETE_EMPLOYEES")) && (

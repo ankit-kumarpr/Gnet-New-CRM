@@ -30,7 +30,7 @@ const whenLabel = (value) => {
 };
 
 const meetStatusClass = (status) => {
-  if (status === "APPROVED") return "bg-emerald-50 text-emerald-800 border-emerald-200";
+  if (status === "APPROVED") return "bg-[#EAF1FA] text-[#1E416B] border-[#3569A8]/30";
   if (status === "PENDING") return "bg-amber-50 text-amber-800 border-amber-200";
   if (status === "REJECTED") return "bg-rose-50 text-rose-800 border-rose-200";
   return "bg-slate-50 text-slate-700 border-slate-200";
@@ -151,7 +151,7 @@ export function ClientDashboard() {
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Client ID</p>
-            <IdCard className="h-4 w-4 text-emerald-700" />
+            <IdCard className="h-4 w-4 text-[#3569A8]" />
           </div>
           <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">{profile?.clientId || "—"}</p>
           <p className="mt-1 text-xs text-slate-500">Use this ID to sign in (password is the same)</p>
@@ -160,7 +160,7 @@ export function ClientDashboard() {
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Contact</p>
-            <Mail className="h-4 w-4 text-emerald-700" />
+            <Mail className="h-4 w-4 text-[#3569A8]" />
           </div>
           <p className="mt-3 text-lg font-semibold text-slate-900">{profile?.email || "—"}</p>
           <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
@@ -172,7 +172,7 @@ export function ClientDashboard() {
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:col-span-2 xl:col-span-1">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Services</p>
-            <Layers className="h-4 w-4 text-emerald-700" />
+            <Layers className="h-4 w-4 text-[#3569A8]" />
           </div>
           <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">{services.length}</p>
           <p className="mt-1 text-xs text-slate-500">Active services linked to your account</p>
@@ -183,7 +183,7 @@ export function ClientDashboard() {
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-slate-900">Your reporting manager</h2>
           {manager?.name ? (
-            <p className="mt-4 flex items-center gap-2 text-lg font-semibold text-emerald-900">
+            <p className="mt-4 flex items-center gap-2 text-lg font-semibold text-[#142B4A]">
               <UserRound className="h-5 w-5" />
               {manager.name}
             </p>
@@ -214,11 +214,11 @@ export function ClientDashboard() {
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Video className="h-4 w-4 text-emerald-700" />
+            <Video className="h-4 w-4 text-[#3569A8]" />
             <h2 className="text-sm font-semibold text-slate-900">Google Meet</h2>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link to="/dashboard/my-meetings" className="text-xs font-medium text-emerald-700 hover:underline self-center">
+            <Link to="/dashboard/my-meetings" className="text-xs font-medium text-[#3569A8] hover:underline self-center">
               Open meetings
             </Link>
             <Button type="button" size="sm" onClick={() => setShowMeetForm((v) => !v)}>
@@ -227,11 +227,11 @@ export function ClientDashboard() {
           </div>
         </div>
         <p className="mt-1 text-xs text-slate-500">
-          Request a meeting with time and agenda. Sidebar → Google Meet pe poori list milti hai.
+          Request a meeting with time and agenda. Sidebar → Google Meet has the full list.
         </p>
 
         {showMeetForm && (
-          <form onSubmit={requestMeet} className="mt-4 space-y-3 rounded-lg border border-emerald-100 bg-emerald-50/40 p-4">
+          <form onSubmit={requestMeet} className="mt-4 space-y-3 rounded-lg border border-[#E5EAF1] bg-[#EAF1FA]/40 p-4">
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-600">Preferred date & time *</label>
               <Input
@@ -247,7 +247,7 @@ export function ClientDashboard() {
                 rows={3}
                 value={meetForm.agenda}
                 onChange={(e) => setMeetForm((c) => ({ ...c, agenda: e.target.value }))}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-600"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#3569A8]"
                 placeholder="What would you like to discuss?"
                 required
               />
@@ -305,15 +305,15 @@ export function ClientDashboard() {
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <ClipboardList className="h-4 w-4 text-emerald-700" />
+            <ClipboardList className="h-4 w-4 text-[#3569A8]" />
             <h2 className="text-sm font-semibold text-slate-900">Approved daily reports</h2>
           </div>
-          <Link to="/dashboard/my-reports" className="text-xs font-medium text-emerald-700 hover:underline">
+          <Link to="/dashboard/my-reports" className="text-xs font-medium text-[#3569A8] hover:underline">
             View all
           </Link>
         </div>
         <p className="mt-1 text-xs text-slate-500">
-          Reports appear after your manager/admin approves. Sidebar → My reports se poori list kholo.
+          Reports appear after your manager/admin approves. Sidebar → My reports for the full list.
         </p>
         {reports.length === 0 ? (
           <p className="mt-4 text-sm text-slate-500">No approved reports yet.</p>
@@ -323,7 +323,7 @@ export function ClientDashboard() {
               <li key={row._id}>
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-left text-sm hover:border-emerald-200 hover:bg-emerald-50/50"
+                  className="flex w-full items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-left text-sm hover:border-[#3569A8]/30 hover:bg-[#EAF1FA]/50"
                   onClick={() => navigate(`/dashboard/my-reports/${row._id}`)}
                 >
                   <span className="font-medium text-slate-900">

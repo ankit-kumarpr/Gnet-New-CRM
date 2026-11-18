@@ -62,30 +62,30 @@ export function InterviewView() {
         )}
       </div>
 
-      <div className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
-        <div className="bg-gradient-to-r from-emerald-950 via-emerald-800 to-teal-600 px-6 py-8 text-white">
+      <div className="overflow-hidden rounded-3xl border border-[#E5EAF1] bg-white shadow-sm">
+        <div className="bg-gradient-to-r from-[#102238] via-[#142B4A] to-[#1E416B] px-6 py-8 text-white">
           <h2 className="text-2xl font-semibold">{interview.candidateName}</h2>
-          <p className="mt-1 text-sm text-emerald-100">{interview.role} · {interview.round}</p>
+          <p className="mt-1 text-sm text-white/80">{interview.role} · {interview.round}</p>
           <span className={cn("mt-3 inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold", interviewStatusClass(interview.status))}>{interviewLabel(interview.status)}</span>
         </div>
         <div className="grid gap-3 px-6 py-5 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          <p className="flex items-start gap-2"><Phone className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{show(interview.phone)}</p>
-          <p className="flex items-start gap-2"><Mail className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{show(interview.email)}</p>
-          <p className="flex items-start gap-2"><UserRound className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{show(interview.interviewer?.name)}</p>
-          <p className="flex items-start gap-2"><Calendar className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />Interview {formatDate(interview.interviewDate)}</p>
-          <p className="flex items-start gap-2"><Calendar className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />Next round {interview.status === "NEXT_ROUND" ? formatDate(interview.nextRoundDate) : "—"}</p>
+          <p className="flex items-start gap-2"><Phone className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{show(interview.phone)}</p>
+          <p className="flex items-start gap-2"><Mail className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{show(interview.email)}</p>
+          <p className="flex items-start gap-2"><UserRound className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{show(interview.interviewer?.name)}</p>
+          <p className="flex items-start gap-2"><Calendar className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />Interview {formatDate(interview.interviewDate)}</p>
+          <p className="flex items-start gap-2"><Calendar className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />Next round {interview.status === "NEXT_ROUND" ? formatDate(interview.nextRoundDate) : "—"}</p>
         </div>
       </div>
 
-      <section className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-slate-900">Note</h3>
         <p className="mt-3 whitespace-pre-wrap text-sm text-slate-900">{show(interview.note)}</p>
       </section>
 
-      <section className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-slate-900">Resume</h3>
         {interview.resume?.url ? (
-          <a href={interview.resume.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-sm font-medium text-emerald-700 hover:underline">{interview.resume.name || "Open resume"}</a>
+          <a href={interview.resume.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-sm font-medium text-[#3569A8] hover:underline">{interview.resume.name || "Open resume"}</a>
         ) : (
           <p className="mt-3 text-sm text-slate-500">No resume uploaded.</p>
         )}

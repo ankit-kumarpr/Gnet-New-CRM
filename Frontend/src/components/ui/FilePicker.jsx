@@ -25,7 +25,7 @@ export function FilePicker({ accept, disabled, file, files, multiple = false, on
           type="button"
           disabled={disabled}
           onClick={() => inputRef.current?.click()}
-          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-emerald-600 px-3 text-sm font-medium text-white hover:bg-emerald-700 disabled:pointer-events-none"
+          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-[#142B4A] px-3 text-sm font-medium text-white hover:bg-[#102238] disabled:pointer-events-none"
         >
           <Upload className="h-4 w-4" />
           {multiple ? "Add files" : "Choose file"}
@@ -34,9 +34,9 @@ export function FilePicker({ accept, disabled, file, files, multiple = false, on
           {selected.length === 0 ? (
             <span className="text-sm text-slate-400">No file chosen</span>
           ) : selected.map((item, index) => (
-            <span key={`${item.name}-${index}`} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800">
+            <span key={`${item.name}-${index}`} className="inline-flex items-center gap-1 rounded-full bg-[#EAF1FA] px-2 py-0.5 text-xs font-medium text-[#1E416B]">
               <span className="max-w-40 truncate">{item.name}</span>
-              <button type="button" disabled={disabled} aria-label={`Remove ${item.name}`} onClick={() => clearAt(index)} className="rounded-full text-emerald-500 hover:text-emerald-800">
+              <button type="button" disabled={disabled} aria-label={`Remove ${item.name}`} onClick={() => clearAt(index)} className="rounded-full text-[#3569A8] hover:text-[#1E416B]">
                 <X className="h-3 w-3" />
               </button>
             </span>

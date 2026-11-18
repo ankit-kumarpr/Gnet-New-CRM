@@ -10,7 +10,7 @@ import { useAuth } from "../../context/AuthContext";
 import { FOLLOW_UP_TYPES, LEAD_SOURCES, LEAD_STATUSES, canEditLead, canFollowLead, followUpTone, formatDate, formatDateTime, formatMoney, isClosedLead, leadLabel, statusClass, toDateInput } from "./leadOptions";
 import { cn } from "../../utils/cn";
 
-const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 const show = (value) => (value ? value : "—");
 
 const emptyNote = (lead) => ({
@@ -164,21 +164,21 @@ export function LeadView() {
         )}
       </div>
 
-      <div className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
-        <div className="bg-gradient-to-r from-emerald-950 via-emerald-800 to-teal-600 px-6 py-8 text-white">
+      <div className="overflow-hidden rounded-3xl border border-[#E5EAF1] bg-white shadow-sm">
+        <div className="bg-gradient-to-r from-[#102238] via-[#142B4A] to-[#1E416B] px-6 py-8 text-white">
           <div className="flex flex-wrap items-center gap-5">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-300 text-2xl font-semibold text-white shadow-md">{initials || "L"}</div>
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#1E416B] to-[#3569A8] text-2xl font-semibold text-white shadow-md">{initials || "L"}</div>
             <div>
               <h2 className="text-2xl font-semibold">{lead.name}</h2>
-              <p className="text-sm text-emerald-100">{leadLabel(LEAD_SOURCES, lead.source)}</p>
+              <p className="text-sm text-white/80">{leadLabel(LEAD_SOURCES, lead.source)}</p>
               <span className={cn("mt-3 inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold", statusClass(lead.status))}>{leadLabel(LEAD_STATUSES, lead.status)}</span>
             </div>
           </div>
         </div>
         <div className="grid gap-3 px-6 py-5 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          <p className="flex items-start gap-2"><Phone className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{show(lead.phone)}</p>
-          <p className="flex items-start gap-2"><Building2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{show(lead.companyName)}</p>
-          <p className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{show(lead.address)}</p>
+          <p className="flex items-start gap-2"><Phone className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{show(lead.phone)}</p>
+          <p className="flex items-start gap-2"><Building2 className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{show(lead.companyName)}</p>
+          <p className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{show(lead.address)}</p>
           <div className="flex flex-wrap items-center gap-2">
             <span>Assigned to</span>
             {lead.canAssign ? (
@@ -207,7 +207,7 @@ export function LeadView() {
         </div>
       </div>
 
-      <section id="follow" className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+      <section id="follow" className="rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-slate-900">Follow-up</h3>
         <p className="mt-1 text-sm text-slate-500">Status changes from here. Lead name, phone, and services stay on Edit.</p>
         {allowFollow && (
@@ -226,7 +226,7 @@ export function LeadView() {
                 </select>
               </div>
               {note.status === "CONVERTED" && (
-                <p className="text-sm text-emerald-700 sm:col-span-2 lg:col-span-3 xl:col-span-4">This sale counts for you, and it stays with the person this lead is assigned to.</p>
+                <p className="text-sm text-[#3569A8] sm:col-span-2 lg:col-span-3 xl:col-span-4">This sale counts for you, and it stays with the person this lead is assigned to.</p>
               )}
               {note.status === "PAYMENT" && lead.status !== "CONVERTED" && lead.status !== "PAYMENT" && (
                 <p className="text-sm text-amber-700 sm:col-span-2 lg:col-span-3 xl:col-span-4">Mark this lead converted first. Payment comes after the sale.</p>
@@ -258,7 +258,7 @@ export function LeadView() {
                 rows={3}
                 disabled={saving}
                 onChange={(event) => setField("remark", event.target.value)}
-                className="flex w-full rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#3569A8] disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
             <div className="flex justify-end">
@@ -291,12 +291,12 @@ export function LeadView() {
         )}
       </section>
 
-      <section className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-slate-900">Remark</h3>
         <p className="mt-3 whitespace-pre-wrap text-sm text-slate-900">{show(lead.remark)}</p>
       </section>
 
-      <section className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-slate-900">Services</h3>
         {(lead.services || []).length === 0 ? (
           <p className="mt-3 text-sm text-slate-500">No service selected.</p>

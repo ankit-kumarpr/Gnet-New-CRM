@@ -18,7 +18,7 @@ const whenLabel = (value) => {
 };
 
 const meetStatusClass = (status) => {
-  if (status === "APPROVED") return "bg-emerald-50 text-emerald-800 border-emerald-200";
+  if (status === "APPROVED") return "bg-[#EAF1FA] text-[#1E416B] border-[#3569A8]/30";
   if (status === "PENDING") return "bg-amber-50 text-amber-800 border-amber-200";
   if (status === "REJECTED") return "bg-rose-50 text-rose-800 border-rose-200";
   return "bg-slate-50 text-slate-700 border-slate-200";
@@ -37,7 +37,7 @@ export function ClientMeetings() {
       const res = await api.get("/auth/meetings", { params: { limit: 50 } });
       setMeetings(res.data.data || []);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Meetings load nahi hui");
+      toast.error(error.response?.data?.message || "Could not load meetings");
       setMeetings([]);
     } finally {
       setLoading(false);
@@ -50,15 +50,15 @@ export function ClientMeetings() {
 
   const requestMeet = async (event) => {
     event.preventDefault();
-    if (!meetForm.scheduledAt) return toast.error("Date & time chuno");
-    if (meetForm.agenda.trim().length < 5) return toast.error("Short agenda likho");
+    if (!meetForm.scheduledAt) return toast.error("Choose a date and time");
+    if (meetForm.agenda.trim().length < 5) return toast.error("Enter a short agenda");
     try {
       setSavingMeet(true);
       await api.post("/auth/meetings", {
         scheduledAt: new Date(meetForm.scheduledAt).toISOString(),
         agenda: meetForm.agenda.trim(),
       });
-      toast.success("Meet request bhej di — approval ka wait");
+      toast.success("Meet request sent — waiting for approval");
       setMeetForm({ scheduledAt: "", agenda: "" });
       setShowMeetForm(false);
       await loadMeetings();
@@ -70,7 +70,7 @@ export function ClientMeetings() {
   };
 
   const cancelMeet = async (row) => {
-    if (!window.confirm("Is meet request ko cancel karein?")) return;
+    if (!window.confirm("Cancel this meet request?")) return;
     try {
       await api.post(`/auth/meetings/${row._id}/cancel`);
       toast.success("Cancelled");
@@ -86,7 +86,7 @@ export function ClientMeetings() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Google Meet</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Time aur agenda ke saath meet request bhejo. Approve hone ke baad Join Meet se link khulega.
+            Send a meet request with time and agenda. After approval, use Join Meet to open the link.
           </p>
         </div>
         <Button type="button" onClick={() => setShowMeetForm((v) => !v)}>
@@ -98,7 +98,7 @@ export function ClientMeetings() {
       {showMeetForm && (
         <form
           onSubmit={requestMeet}
-          className="space-y-3 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 shadow-sm"
+          className="space-y-3 rounded-xl border border-[#E5EAF1] bg-[#EAF1FA]/40 p-4 shadow-sm"
         >
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600">Preferred date & time *</label>
@@ -115,8 +115,8 @@ export function ClientMeetings() {
               rows={3}
               value={meetForm.agenda}
               onChange={(e) => setMeetForm((c) => ({ ...c, agenda: e.target.value }))}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-600"
-              placeholder="Kya discuss karna hai?"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#3569A8]"
+              placeholder="What would you like to discuss?"
               required
             />
           </div>
@@ -132,7 +132,7 @@ export function ClientMeetings() {
         {loading ? (
           <p className="px-4 py-8 text-center text-sm text-slate-500">Loading...</p>
         ) : meetings.length === 0 ? (
-          <p className="px-4 py-8 text-center text-sm text-slate-500">Abhi koi meeting nahi.</p>
+          <p className="px-4 py-8 text-center text-sm text-slate-500">No meetings yet.</p>
         ) : (
           <ul className="divide-y divide-slate-100">
             {meetings.map((row) => (

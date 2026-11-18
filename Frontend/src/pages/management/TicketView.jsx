@@ -8,7 +8,7 @@ import api from "../../services/api";
 import { TICKET_STATUSES, formatDateTime, ticketPriorityClass, ticketPriorityLabel, ticketStatusClass, ticketStatusLabel } from "./ticketOptions";
 import { cn } from "../../utils/cn";
 
-const selectClass = "h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+const selectClass = "h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 
 export function TicketView() {
   const { id } = useParams();
@@ -110,15 +110,15 @@ export function TicketView() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
-        <div className="bg-gradient-to-r from-emerald-950 via-emerald-800 to-teal-600 px-6 py-8 text-white">
+      <div className="overflow-hidden rounded-3xl border border-[#E5EAF1] bg-white shadow-sm">
+        <div className="bg-gradient-to-r from-[#102238] via-[#142B4A] to-[#1E416B] px-6 py-8 text-white">
           <h2 className="text-2xl font-semibold">{ticket.subject}</h2>
           <span className={cn("mt-3 inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold", ticketPriorityClass(ticket.priority))}>{ticketPriorityLabel(ticket.priority)}</span>
         </div>
         <div className={cn("px-6 py-5 text-sm text-slate-900", richHtmlClass)} dangerouslySetInnerHTML={{ __html: ticket.content }} />
         {ticket.file?.url && (
           <div className="border-t border-slate-100 px-6 py-4">
-            <a href={ticket.file.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 hover:underline">
+            <a href={ticket.file.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-medium text-[#3569A8] hover:underline">
               <Paperclip className="h-4 w-4" />
               {ticket.file.name || "Open file"}
             </a>
@@ -131,7 +131,7 @@ export function TicketView() {
         {(ticket.replies || []).length === 0 ? (
           <p className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm text-slate-500">No replies yet.</p>
         ) : ticket.replies.map((item) => (
-          <article key={item._id} className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+          <article key={item._id} className="rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">
             <p className="text-sm font-medium text-slate-900">{item.author?.name || "—"} <span className="font-normal text-slate-500">· {formatDateTime(item.createdAt)}</span></p>
             <div className={cn("mt-2 text-sm text-slate-800", richHtmlClass)} dangerouslySetInnerHTML={{ __html: item.message }} />
           </article>

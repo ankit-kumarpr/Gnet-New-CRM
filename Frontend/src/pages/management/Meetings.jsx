@@ -8,7 +8,7 @@ import api from "../../services/api";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { cn } from "../../utils/cn";
 
-const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-600";
+const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
 
 const whenLabel = (value) => {
   if (!value) return "—";
@@ -22,7 +22,7 @@ const whenLabel = (value) => {
 };
 
 const statusClass = (status) => {
-  if (status === "APPROVED") return "bg-emerald-50 text-emerald-800 border-emerald-200";
+  if (status === "APPROVED") return "bg-[#EAF1FA] text-[#1E416B] border-[#3569A8]/30";
   if (status === "PENDING") return "bg-amber-50 text-amber-800 border-amber-200";
   if (status === "REJECTED") return "bg-rose-50 text-rose-800 border-rose-200";
   return "bg-slate-50 text-slate-700 border-slate-200";
@@ -181,7 +181,7 @@ export function Meetings() {
         })}
       </div>
       {value.length > 0 && (
-        <p className="text-xs text-emerald-700">{value.length} employee(s) selected</p>
+        <p className="text-xs text-[#3569A8]">{value.length} employee(s) selected</p>
       )}
     </div>
   );
@@ -236,7 +236,7 @@ export function Meetings() {
               rows={3}
               value={form.agenda}
               onChange={(e) => setForm((c) => ({ ...c, agenda: e.target.value }))}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-600"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#3569A8]"
               required
             />
           </div>
@@ -299,7 +299,7 @@ export function Meetings() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Video className="h-4 w-4 text-emerald-700" />
+                  <Video className="h-4 w-4 text-[#3569A8]" />
                   <p className="font-semibold text-slate-900">{row.client?.name || "Client"}</p>
                   <span className={cn("rounded-full border px-2 py-0.5 text-xs font-semibold", statusClass(row.status))}>{row.status}</span>
                   <span className="text-xs text-slate-500">{row.origin === "CLIENT" ? "Client request" : "Staff scheduled"}</span>

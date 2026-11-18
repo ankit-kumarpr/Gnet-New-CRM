@@ -174,7 +174,7 @@ export function Services() {
                     <div className="flex items-center justify-end gap-2">
                       {canEdit && (
                         <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(row)}>
-                          <Edit2 className="h-4 w-4 text-slate-500 hover:text-emerald-600" />
+                          <Edit2 className="h-4 w-4 text-slate-500 hover:text-[#3569A8]" />
                         </Button>
                       )}
                       {canDelete && (

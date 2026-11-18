@@ -29,7 +29,7 @@ function ReportDetail({ id, onBack }) {
       const res = await api.get(`/auth/evening-reports/${id}`);
       setRow(res.data.data);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Report load nahi hui");
+      toast.error(error.response?.data?.message || "Could not load report");
     } finally {
       setLoading(false);
     }
@@ -40,13 +40,13 @@ function ReportDetail({ id, onBack }) {
   }, [id]);
 
   const sendFeedback = async () => {
-    if (!feedback.trim()) return toast.error("Feedback likho");
+    if (!feedback.trim()) return toast.error("Enter feedback");
     try {
       setSaving(true);
       const res = await api.post(`/auth/evening-reports/${id}/feedback`, { body: feedback.trim() });
       setRow(res.data.data);
       setFeedback("");
-      toast.success("Feedback bhej diya");
+      toast.success("Feedback sent");
     } catch (error) {
       toast.error(error.response?.data?.message || "Feedback fail");
     } finally {
@@ -58,7 +58,7 @@ function ReportDetail({ id, onBack }) {
     return <p className="rounded-xl border bg-white p-6 text-sm text-slate-500">Loading report...</p>;
   }
   if (!row) {
-    return <p className="rounded-xl border bg-white p-6 text-sm text-slate-500">Report nahi mili.</p>;
+    return <p className="rounded-xl border bg-white p-6 text-sm text-slate-500">Report not found.</p>;
   }
 
   return (
@@ -73,14 +73,14 @@ function ReportDetail({ id, onBack }) {
             <p className="text-sm text-slate-500">{dateLabel(row.date)}</p>
           </div>
         </div>
-        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+        <span className="rounded-full border border-[#3569A8]/30 bg-[#EAF1FA] px-3 py-1 text-xs font-semibold text-[#1E416B]">
           {row.status}
         </span>
       </div>
 
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">Kaam ki detail</h2>
+          <h2 className="text-sm font-semibold text-slate-900">Work details</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
@@ -109,7 +109,7 @@ function ReportDetail({ id, onBack }) {
                         className={cn(
                           "rounded-full px-2 py-0.5 text-xs font-medium",
                           item.status === "DONE"
-                            ? "bg-emerald-100 text-emerald-800"
+                            ? "bg-[#16A36A]/12 text-[#1E416B]"
                             : "bg-slate-100 text-slate-700",
                         )}
                       >
@@ -141,7 +141,7 @@ function ReportDetail({ id, onBack }) {
         </h3>
         <ul className="space-y-2">
           {(row.feedback || []).length === 0 ? (
-            <li className="text-sm text-slate-500">Abhi koi feedback nahi.</li>
+            <li className="text-sm text-slate-500">No feedback yet.</li>
           ) : (
             row.feedback.map((f) => (
               <li key={f._id} className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm">
@@ -158,7 +158,7 @@ function ReportDetail({ id, onBack }) {
             <Input
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
-              placeholder="Team ke liye feedback..."
+              placeholder="Feedback for the team..."
               disabled={saving}
             />
             <Button type="button" onClick={sendFeedback} disabled={saving}>
@@ -183,7 +183,7 @@ export function ClientReports() {
       const res = await api.get("/auth/evening-reports", { params: { limit: 50 } });
       setRows(res.data.data || []);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Reports load nahi hui");
+      toast.error(error.response?.data?.message || "Could not load reports");
       setRows([]);
     } finally {
       setLoading(false);
@@ -203,7 +203,7 @@ export function ClientReports() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">My reports</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Approved daily / evening reports from your team. Open karke detail aur feedback de sakte ho.
+          Approved daily / evening reports from your team. Open one for details and to leave feedback.
         </p>
       </div>
 
@@ -225,7 +225,7 @@ export function ClientReports() {
             ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-4 py-8 text-center text-slate-500">
-                  Abhi koi approved report nahi. Team approve karegi tab yahan dikhegi.
+                  No approved reports yet. They will appear here after the team approves them.
                 </td>
               </tr>
             ) : (
@@ -259,9 +259,9 @@ export function ClientReports() {
       </div>
 
       <p className="text-xs text-slate-500">
-        Dashboard pe bhi short list milti hai — poori list yahan se dekho.
+        A short list also appears on the dashboard — see the full list here.
         {" "}
-        <Link to="/dashboard" className="font-medium text-emerald-700 hover:underline">
+        <Link to="/dashboard" className="font-medium text-[#3569A8] hover:underline">
           Back to dashboard
         </Link>
       </p>

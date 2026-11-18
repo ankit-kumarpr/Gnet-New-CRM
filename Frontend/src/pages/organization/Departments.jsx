@@ -103,7 +103,7 @@ export function Departments() {
           />
         </div>
         <select 
-          className="h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent"
+          className="h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3569A8] focus:border-transparent"
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
         >
@@ -150,7 +150,7 @@ export function Departments() {
                       <div className="flex items-center justify-end gap-2">
                         {(hasPermission("MANAGE_DEPARTMENTS") || hasPermission("EDIT_DEPARTMENTS")) && (
                           <Button variant="ghost" size="icon" onClick={() => openEditModal(dept)} title="Edit">
-                            <Edit2 className="h-4 w-4 text-slate-500 hover:text-emerald-600" />
+                            <Edit2 className="h-4 w-4 text-slate-500 hover:text-[#3569A8]" />
                           </Button>
                         )}
                         {(hasPermission("MANAGE_DEPARTMENTS") || hasPermission("DELETE_DEPARTMENTS")) && (

@@ -272,7 +272,7 @@ const createEveningReport = async (req, res, next) => {
             if (!(scope.clientIds || []).includes(String(clientId))) {
                 return res.status(403).json({
                     success: false,
-                    message: "Sirf assigned client / project pe hi report bana sakte ho",
+                    message: "You can only create reports for assigned clients / projects",
                 });
             }
         }
@@ -309,7 +309,7 @@ const createEveningReport = async (req, res, next) => {
         const data = await withPeople(ClientEveningReport.findById(row._id)).lean();
         res.status(201).json({
             success: true,
-            message: "Draft report created — ab kitna kaam kiya likho aur save/submit karo",
+            message: "Draft report created — write the work done, then save/submit",
             data: present(data, req.user, req, { assignedOk: true }),
         });
     } catch (error) {
@@ -444,7 +444,7 @@ const updateEveningReport = async (req, res, next) => {
         const data = await withPeople(ClientEveningReport.findById(row._id)).lean();
         res.status(200).json({
             success: true,
-            message: lead ? "Report saved" : "Aapka kaam save / submit ho gaya — RM lock & approve karega",
+            message: lead ? "Report saved" : "Your work was saved / submitted — RM will lock & approve",
             data: present(data, req.user, req, { assignedOk: true }),
         });
     } catch (error) {
@@ -570,7 +570,7 @@ const generateNow = async (req, res, next) => {
         // Kept for older UI — auto generate is off; use create evening report instead.
         res.status(200).json({
             success: true,
-            message: "Auto generate band hai. Client select karke manual report banao.",
+            message: "Auto generate is off. Select a client and create the report manually.",
             data: { created: 0, updated: 0, skipped: true, reason: "manual-only" },
         });
     } catch (error) {
