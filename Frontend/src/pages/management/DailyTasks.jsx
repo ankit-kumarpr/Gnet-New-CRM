@@ -1,462 +1,310 @@
-import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { CheckCircle2, Circle, Plus, RefreshCw, Send, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { EmployeeSelect } from "../../components/ui/EmployeeSelect";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
-import { useTaskAlerts } from "../../context/TaskAlertContext";
 import { cn } from "../../utils/cn";
 
-const selectClass = "h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#3569A8]";
+const selectClass =
+  "h-10 w-full rounded-[6px] border border-[#E5EAF1] bg-white px-3 py-2 text-sm focus:border-[#3569A8] focus:outline-none focus:ring-2 focus:ring-[#3569A8]/20";
 
 const todayInput = () => {
   const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-const shiftDate = (value, days) => {
-  const [y, m, d] = value.split("-").map(Number);
-  const date = new Date(y, m - 1, d);
-  date.setDate(date.getDate() + days);
-  const yy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  return `${yy}-${mm}-${dd}`;
-};
-
-const monthRange = () => {
-  const now = new Date();
-  const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const to = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(last).padStart(2, "0")}`;
-  return { from, to };
-};
-
-const dayTitle = new Intl.DateTimeFormat("en-IN", {
-  weekday: "long",
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-});
-
-const statusPill = (status) => {
-  if (status === "DONE") return "bg-[#16A36A]/12 text-[#1E416B]";
+const statusClass = (status) => {
+  if (status === "DONE") return "bg-[#16A36A]/12 text-[#16A36A]";
   if (status === "PARTIAL") return "bg-amber-100 text-amber-900";
+  if (status === "HOLD") return "bg-orange-100 text-orange-800";
   return "bg-slate-100 text-slate-700";
 };
 
-const statusText = (status) => {
-  if (status === "DONE") return "Done";
-  if (status === "PARTIAL") return "Partial";
-  return "Pending";
-};
-
 export function DailyTasks() {
-  const { user, hasPermission } = useAuth();
-  const { refreshAlerts } = useTaskAlerts();
-  const canBrowseOthers = user?.userType === "ADMIN" || hasPermission(["MANAGE_DAILY_TASKS"]);
+  const { user } = useAuth();
   const [date, setDate] = useState(todayInput());
-  const [assignee, setAssignee] = useState("");
-  const [groups, setGroups] = useState([]);
-  const [counts, setCounts] = useState({ PENDING: 0, PARTIAL: 0, DONE: 0, ALL: 0 });
-  const [averagePercent, setAveragePercent] = useState(0);
+  const [projects, setProjects] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [counts, setCounts] = useState({});
   const [loading, setLoading] = useState(true);
-  const [reportFrom, setReportFrom] = useState(todayInput());
-  const [reportTo, setReportTo] = useState(todayInput());
-  const [reportAssignee, setReportAssignee] = useState("");
-  const [downloading, setDownloading] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("ALL"); // ALL | PENDING | PARTIAL | DONE
+  const [saving, setSaving] = useState(false);
+  const [pushing, setPushing] = useState(false);
+  const [form, setForm] = useState({ project: "", title: "", work: "" });
 
-  const load = async () => {
+  const loadOptions = async () => {
+    try {
+      const res = await api.get("/admin/daily-tasks/options");
+      setProjects(res.data.data?.projects || []);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not load assigned projects");
+    }
+  };
+
+  const loadTasks = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/admin/work-plans/daily", {
-        params: {
-          date,
-          assignee: canBrowseOthers ? (assignee || undefined) : undefined,
-        },
+      const res = await api.get("/admin/daily-tasks/list", {
+        params: { date, assignee: user?._id, limit: 100 },
       });
-      const data = res.data.data || {};
-      setGroups(data.groups || []);
-      setCounts(data.counts || { PENDING: 0, PARTIAL: 0, DONE: 0, ALL: 0 });
-      setAveragePercent(data.averagePercent || 0);
+      setTasks(res.data.data || []);
+      setCounts(res.data.counts || {});
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to load daily work");
+      toast.error(error.response?.data?.message || "Could not load todos");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    load();
-  }, [date, assignee, canBrowseOthers]);
+    loadOptions();
+  }, []);
 
-  const markSlots = async (group, slots, status) => {
-    const targets = (slots || []).filter((slot) => slot.status !== status);
-    if (!targets.length) return;
+  useEffect(() => {
+    if (user?._id) loadTasks();
+  }, [date, user?._id]);
+
+  const grouped = useMemo(() => {
+    const map = new Map();
+    for (const task of tasks) {
+      const clientKey = String(task.client?._id || task.client || "none");
+      const clientName = task.client?.name || task.clientName || "No client";
+      if (!map.has(clientKey)) map.set(clientKey, { clientId: clientKey === "none" ? "" : clientKey, clientName, items: [] });
+      map.get(clientKey).items.push(task);
+    }
+    return [...map.values()];
+  }, [tasks]);
+
+  const addTodo = async (event) => {
+    event.preventDefault();
+    if (!form.project) return toast.error("Select an assigned project");
+    if (!form.title.trim()) return toast.error("Enter what you will do");
     try {
-      if (group.source === "URGENT") {
-        await api.patch(`/admin/urgent-works/${group.urgentId}/status`, { status });
-      } else {
-        await Promise.all(
-          targets.map((slot) => api.patch(`/admin/work-plans/${group.planId}/slots/${slot._id}`, { status })),
-        );
-      }
-      await load();
-      refreshAlerts();
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Could not update");
-    }
-  };
-
-  const markOne = async (group, slots) => {
-    const next = (slots || []).find((slot) => slot.status !== "DONE");
-    if (!next) return;
-    await markSlots(group, [next], "DONE");
-  };
-
-  const downloadReport = async () => {
-    if (!reportFrom || !reportTo) {
-      toast.error("Select from and to date");
-      return;
-    }
-    if (reportTo < reportFrom) {
-      toast.error("To date cannot be before from date");
-      return;
-    }
-    try {
-      setDownloading(true);
-      const empId = canBrowseOthers ? (reportAssignee || undefined) : undefined;
-      const res = await api.get("/admin/work-plans/daily/export", {
-        params: {
-          from: reportFrom,
-          to: reportTo,
-          assignee: empId,
-        },
-        responseType: "blob",
+      setSaving(true);
+      await api.post("/admin/daily-tasks/create", {
+        date,
+        project: form.project,
+        title: form.title.trim(),
+        work: form.work.trim() || form.title.trim(),
+        assignee: user._id,
+        status: "PENDING",
       });
-      const url = URL.createObjectURL(res.data);
-      const link = document.createElement("a");
-      link.href = url;
-      const slug = empId ? String(empId).slice(-6) : (canBrowseOthers ? "all" : "mine");
-      link.download = `work-report-${slug}-${reportFrom}_to_${reportTo}.xlsx`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-      toast.success(empId ? "Employee report ready" : "Report downloaded");
+      toast.success("Todo added");
+      setForm({ project: form.project, title: "", work: "" });
+      await loadTasks();
     } catch (error) {
-      let message = "Download failed";
-      const data = error.response?.data;
-      if (data instanceof Blob) {
-        try {
-          message = JSON.parse(await data.text()).message || message;
-        } catch {
-          // keep default
-        }
-      } else if (error.response?.data?.message) {
-        message = error.response.data.message;
-      }
-      toast.error(message);
+      toast.error(error.response?.data?.message || "Could not add todo");
     } finally {
-      setDownloading(false);
+      setSaving(false);
     }
   };
 
-  const setThisMonth = () => {
-    const range = monthRange();
-    setReportFrom(range.from);
-    setReportTo(range.to);
+  const setStatus = async (task, status) => {
+    try {
+      setSaving(true);
+      await api.patch(`/admin/daily-tasks/${task._id}/status`, {
+        status,
+        workDone: status === "DONE" ? (task.workDone || task.work || task.title) : task.workDone,
+        pendingWork: status === "PENDING" ? "" : task.pendingWork,
+      });
+      toast.success(status === "DONE" ? "Marked complete" : "Marked pending");
+      await loadTasks();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not update status");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeTodo = async (task) => {
+    if (!window.confirm("Delete this todo?")) return;
+    try {
+      setSaving(true);
+      await api.delete(`/admin/daily-tasks/${task._id}`);
+      toast.success("Deleted");
+      await loadTasks();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not delete");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const pushReports = async (clientId = "") => {
+    try {
+      setPushing(true);
+      const res = await api.post("/admin/daily-tasks/push-evening-report", {
+        date,
+        ...(clientId ? { client: clientId } : {}),
+      });
+      const rows = res.data.data || [];
+      const ok = rows.filter((row) => !row.skipped).length;
+      const skipped = rows.filter((row) => row.skipped).length;
+      toast.success(`Evening report updated for ${ok} client(s)${skipped ? ` · ${skipped} skipped` : ""}`);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not build evening report");
+    } finally {
+      setPushing(false);
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            {canBrowseOthers ? "Daily tasks" : "My daily work & report"}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {canBrowseOthers
-              ? "Work plans + urgent work for the selected date. Filter by employee or download reports."
-              : "Change the date to see that day's work and done/pending report. Mark items done here — previous days are also available."}
+          <h1 className="text-2xl font-semibold tracking-tight text-[#26364A]">My daily todos</h1>
+          <p className="mt-1 text-sm text-[#718096]">
+            Add your own todos on assigned projects, mark Complete / Pending, then push to evening report per client.
           </p>
         </div>
-        <Button type="button" variant="outline" onClick={load} disabled={loading}>
-          <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
-          Refresh
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" onClick={loadTasks} disabled={loading || saving}>
+            <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
+            Refresh
+          </Button>
+          <Button type="button" onClick={() => pushReports()} disabled={pushing || !tasks.length}>
+            <Send className="mr-2 h-4 w-4" />
+            {pushing ? "Building..." : "Push all to evening reports"}
+          </Button>
+          <Link to="/dashboard/evening-reports/today">
+            <Button type="button" variant="outline">Open today&apos;s reports</Button>
+          </Link>
+        </div>
       </div>
 
-      <div className={cn(
-        "grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm",
-        canBrowseOthers ? "lg:grid-cols-[1fr_220px_auto]" : "lg:grid-cols-[1fr_auto]",
-      )}>
+      <div className="flex flex-wrap items-end gap-3 rounded-[10px] border border-[#E5EAF1] bg-white p-4 shadow-sm">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Date</label>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="rounded-md border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
-              onClick={() => setDate((d) => shiftDate(d, -1))}
-              aria-label="Previous day"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-            <button
-              type="button"
-              className="rounded-md border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
-              onClick={() => setDate((d) => shiftDate(d, 1))}
-              aria-label="Next day"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-            <Button type="button" variant="outline" onClick={() => setDate(todayInput())}>Today</Button>
-          </div>
-          <p className="mt-2 text-sm font-medium text-slate-800">
-            {dayTitle.format(new Date(`${date}T00:00:00`))}
-            {!canBrowseOthers ? <span className="ml-2 text-xs font-normal text-slate-500">· My tasks only</span> : null}
-          </p>
+          <label className="mb-1 block text-xs font-medium text-[#718096]">Date</label>
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-44" />
         </div>
-        {canBrowseOthers ? (
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Employee</label>
-            <EmployeeSelect
-              value={assignee}
-              onChange={setAssignee}
-              placeholder="All visible"
-              allowEmpty
-            />
-          </div>
-        ) : null}
-        <div className="flex flex-wrap items-end gap-2 text-sm">
-          {[
-            { key: "ALL", label: "All", count: counts.ALL || 0, className: "bg-slate-100 text-slate-700" },
-            { key: "PENDING", label: "Pending", count: counts.PENDING || 0, className: "bg-slate-100 text-slate-700" },
-            { key: "PARTIAL", label: "Partial", count: counts.PARTIAL || 0, className: "bg-amber-100 text-amber-900" },
-            { key: "DONE", label: "Done", count: counts.DONE || 0, className: "bg-[#16A36A]/12 text-[#1E416B]" },
-          ].map((chip) => (
-            <button
-              key={chip.key}
-              type="button"
-              onClick={() => setStatusFilter(chip.key)}
-              className={cn(
-                "rounded-full px-2.5 py-1 font-medium transition",
-                chip.className,
-                statusFilter === chip.key && "ring-2 ring-[#3569A8] ring-offset-1",
-              )}
-            >
-              {chip.label} {chip.count}
-            </button>
-          ))}
-          <span className="rounded-full bg-teal-100 px-2.5 py-1 font-medium text-teal-900">Avg {averagePercent}%</span>
+        <div className="flex flex-wrap gap-2 text-xs">
+          <span className="rounded-[6px] bg-slate-100 px-2.5 py-1 font-medium text-slate-700">All {counts.ALL || tasks.length || 0}</span>
+          <span className="rounded-[6px] bg-slate-100 px-2.5 py-1 font-medium text-slate-700">Pending {counts.PENDING || 0}</span>
+          <span className="rounded-[6px] bg-[#16A36A]/12 px-2.5 py-1 font-medium text-[#16A36A]">Done {counts.DONE || 0}</span>
         </div>
       </div>
 
-      {!canBrowseOthers && !loading && (
-        <div className="rounded-xl border border-[#E5EAF1] bg-[#EAF1FA]/50 p-4 shadow-sm">
-          <p className="text-sm font-semibold text-slate-900">Your report for today / the selected day</p>
-          <p className="mt-1 text-xs text-slate-600">
-            {dayTitle.format(new Date(`${date}T00:00:00`))} · History stays here even after marking Done.
-            Change the date above to view previous days.
-          </p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-4">
-            <div className="rounded-lg bg-white px-3 py-2 border border-slate-100">
-              <p className="text-[11px] uppercase tracking-wide text-slate-500">Tasks</p>
-              <p className="text-lg font-semibold text-slate-900">{counts.ALL || 0}</p>
-            </div>
-            <div className="rounded-lg bg-white px-3 py-2 border border-slate-100">
-              <p className="text-[11px] uppercase tracking-wide text-slate-500">Pending</p>
-              <p className="text-lg font-semibold text-slate-900">{counts.PENDING || 0}</p>
-            </div>
-            <div className="rounded-lg bg-white px-3 py-2 border border-slate-100">
-              <p className="text-[11px] uppercase tracking-wide text-slate-500">Done</p>
-              <p className="text-lg font-semibold text-[#1E416B]">{counts.DONE || 0}</p>
-            </div>
-            <div className="rounded-lg bg-white px-3 py-2 border border-slate-100">
-              <p className="text-[11px] uppercase tracking-wide text-slate-500">Complete</p>
-              <p className="text-lg font-semibold text-teal-900">{averagePercent}%</p>
-            </div>
-          </div>
+      <form onSubmit={addTodo} className="grid gap-3 rounded-[10px] border border-[#E5EAF1] bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+        <div className="lg:col-span-1">
+          <label className="mb-1 block text-xs font-medium text-[#718096]">Assigned project *</label>
+          <select
+            className={selectClass}
+            value={form.project}
+            onChange={(e) => setForm((current) => ({ ...current, project: e.target.value }))}
+            disabled={saving}
+          >
+            <option value="">Select project</option>
+            {projects.map((project) => (
+              <option key={project._id} value={project._id}>
+                {project.clientName ? `${project.clientName} · ` : ""}{project.name}
+              </option>
+            ))}
+          </select>
+          {!projects.length && (
+            <p className="mt-1 text-[11px] text-amber-700">No project assigned to you yet.</p>
+          )}
         </div>
-      )}
-
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-slate-900">
-              {canBrowseOthers ? "Monthly / range report" : "Download my report (Excel)"}
-            </p>
-            <p className="text-xs text-slate-500">
-              {canBrowseOthers
-                ? "Employee filter + Excel with % complete, % pending, done/pending counts."
-                : "Select a date range to download your daily done/pending report as Excel."}
-            </p>
-          </div>
-          <Button type="button" variant="outline" onClick={setThisMonth}>This month</Button>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-[#718096]">Todo *</label>
+          <Input
+            placeholder="e.g. 3 reels for Instagram"
+            value={form.title}
+            onChange={(e) => setForm((current) => ({ ...current, title: e.target.value }))}
+            disabled={saving}
+          />
         </div>
-        <div className={cn("mt-3 grid gap-3 sm:grid-cols-2", canBrowseOthers ? "lg:grid-cols-4" : "lg:grid-cols-3")}>
-          {canBrowseOthers ? (
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Employee</label>
-              <EmployeeSelect
-                value={reportAssignee}
-                onChange={setReportAssignee}
-                placeholder="All employees"
-                allowEmpty
-              />
-            </div>
-          ) : null}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">From</label>
-            <Input type="date" value={reportFrom} onChange={(e) => setReportFrom(e.target.value)} />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">To</label>
-            <Input type="date" value={reportTo} onChange={(e) => setReportTo(e.target.value)} />
-          </div>
-          <div className="flex items-end">
-            <Button type="button" onClick={downloadReport} disabled={downloading} className="w-full">
-              <Download className="mr-2 h-4 w-4" />
-              {downloading ? "Downloading..." : "Download Excel"}
-            </Button>
-          </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-[#718096]">Detail (optional)</label>
+          <Input
+            placeholder="More detail…"
+            value={form.work}
+            onChange={(e) => setForm((current) => ({ ...current, work: e.target.value }))}
+            disabled={saving}
+          />
         </div>
-      </div>
+        <div className="flex items-end">
+          <Button type="submit" className="w-full" disabled={saving || !projects.length}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add todo
+          </Button>
+        </div>
+      </form>
 
       {loading ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">Loading daily work...</div>
-      ) : groups.filter((g) => statusFilter === "ALL" || g.status === statusFilter).length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500">
-          {groups.length === 0
-            ? "No assigned work for this day."
-            : `Nothing matched this filter (${statusFilter === "ALL" ? "All" : statusText(statusFilter)}) — try another filter.`}
-        </div>
+        <p className="rounded-[10px] border border-[#E5EAF1] bg-white p-6 text-sm text-[#718096]">Loading todos...</p>
+      ) : grouped.length === 0 ? (
+        <p className="rounded-[10px] border border-[#E5EAF1] bg-white p-6 text-sm text-[#718096]">
+          No todos for this date. Pick an assigned project and add what you will do today.
+        </p>
       ) : (
         <div className="space-y-4">
-          {groups.filter((g) => statusFilter === "ALL" || g.status === statusFilter).map((group) => {
-            const isUrgent = group.source === "URGENT";
-            return (
-            <section
-              key={group.key}
-              className={cn(
-                "rounded-xl border bg-white shadow-sm",
-                isUrgent ? "border-rose-200" : "border-slate-200",
-              )}
-            >
-              <div className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 px-4 py-3">
+          {grouped.map((group) => (
+            <section key={group.clientId || group.clientName} className="overflow-hidden rounded-[10px] border border-[#E5EAF1] bg-white shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E5EAF1] bg-[#F7F9FC] px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {isUrgent ? "Urgent work" : (group.client?.name || "Client")}
-                    <span className="font-normal text-slate-500">
-                      {" · "}
-                      {isUrgent
-                        ? (group.project?.name || "Project")
-                        : (group.service?.name || "Service")}
-                    </span>
-                    {isUrgent ? (
-                      <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-800">
-                        {group.service?.name || "URGENT"}
-                      </span>
-                    ) : null}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {!isUrgent && group.project?.name ? `Project: ${group.project.name} · ` : ""}
-                    {isUrgent ? "Assigned by" : "Senior"}: {group.reportingManager?.name || "—"}
-                    {" · "}
-                    {group.done}/{group.total} items done
-                  </p>
+                  <h2 className="text-sm font-semibold text-[#26364A]">{group.clientName}</h2>
+                  <p className="text-xs text-[#718096]">{group.items.length} todo(s)</p>
                 </div>
-                <span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-medium", statusPill(group.status))}>
-                  {statusText(group.status)}
-                </span>
-              </div>
-
-              <div className="space-y-2 p-3">
-                {(group.types || []).map((type) => {
-                  const assigneeNames = [
-                    ...new Set(
-                      type.slots.flatMap((slot) => {
-                        if (slot.assignees?.length) return slot.assignees.map((person) => person.name);
-                        return slot.assignee?.name ? [slot.assignee.name] : [];
-                      }).filter(Boolean),
-                    ),
-                  ];
-                  const note = isUrgent ? (type.slots[0]?.note || "") : "";
-                  return (
-                  <div
-                    key={type.key}
-                    className={cn(
-                      "flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2.5",
-                      isUrgent ? "border-rose-100 bg-rose-50/70" : "border-slate-100 bg-slate-50/80",
-                    )}
+                {group.clientId && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={pushing}
+                    onClick={() => pushReports(group.clientId)}
                   >
+                    <Send className="mr-1.5 h-3.5 w-3.5" />
+                    Push to evening report
+                  </Button>
+                )}
+              </div>
+              <ul className="divide-y divide-[#E5EAF1]">
+                {group.items.map((task) => (
+                  <li key={task._id} className="flex flex-wrap items-start justify-between gap-3 px-4 py-3">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-slate-900">
-                        {isUrgent ? "Urgent task" : `${type.total} ${type.label}`}
-                        {!isUrgent && (
-                          <span className="ml-2 text-xs font-normal text-slate-500">
-                            {type.done}/{type.total} done
-                          </span>
-                        )}
-                      </p>
-                      {note ? (
-                        <p className="mt-0.5 line-clamp-2 text-xs text-slate-600">{note}</p>
-                      ) : null}
-                      <p className="text-xs text-slate-500">
-                        {assigneeNames.join(", ") || "Unassigned"}
-                        {type.status === "PARTIAL" ? ` · ${type.pending} pending` : ""}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium text-[#26364A]">{task.title}</p>
+                        <span className={cn("rounded-[6px] px-2 py-0.5 text-[11px] font-semibold", statusClass(task.status))}>
+                          {task.status === "DONE" ? "Complete" : task.status === "PARTIAL" ? "Partial" : task.status === "HOLD" ? "Hold" : "Pending"}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-[#718096]">
+                        {task.project?.name || task.projectName || "Project"}
+                        {task.work && task.work !== task.title ? ` · ${task.work}` : ""}
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-medium", statusPill(type.status))}>
-                        {statusText(type.status)}
-                      </span>
-                      {group.canEdit !== false && type.pending > 0 && (
-                        <>
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => markOne(group, type.slots)}
-                          >
-                            {isUrgent ? "Mark done" : "Mark +1 done"}
-                          </Button>
-                          {!isUrgent && type.pending > 1 && (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => markSlots(group, type.slots, "DONE")}
-                            >
-                              All done
-                            </Button>
-                          )}
-                        </>
-                      )}
-                      {group.canEdit !== false && type.done > 0 && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => markSlots(group, type.slots, "PENDING")}
-                        >
-                          {isUrgent ? "Mark pending" : "Undo"}
-                        </Button>
-                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={task.status === "DONE" ? "default" : "outline"}
+                        disabled={saving}
+                        onClick={() => setStatus(task, "DONE")}
+                      >
+                        <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                        Complete
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={task.status === "PENDING" ? "secondary" : "outline"}
+                        disabled={saving}
+                        onClick={() => setStatus(task, "PENDING")}
+                      >
+                        <Circle className="mr-1.5 h-3.5 w-3.5" />
+                        Pending
+                      </Button>
+                      <Button type="button" size="icon" variant="ghost" disabled={saving} onClick={() => removeTodo(task)} title="Delete">
+                        <Trash2 className="h-4 w-4 text-[#DC5454]" />
+                      </Button>
                     </div>
-                  </div>
-                  );
-                })}
-              </div>
+                  </li>
+                ))}
+              </ul>
             </section>
-            );
-          })}
+          ))}
         </div>
       )}
     </div>

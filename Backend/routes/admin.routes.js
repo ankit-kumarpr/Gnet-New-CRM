@@ -158,7 +158,8 @@ const {
     updateDailyTask,
     updateDailyTaskStatus,
     exportDailyTasks,
-    deleteDailyTask
+    deleteDailyTask,
+    pushEveningReportFromTodos,
 } = require("../controllers/dailyTask.controller");
 const {
     getNotificationFeed,
@@ -350,7 +351,8 @@ router.patch("/urgent-works/update/:id", checkPermission("EDIT_URGENT_WORK", "MA
 router.patch("/urgent-works/:id/status", checkPermission("EDIT_URGENT_WORK", "MANAGE_URGENT_WORK"), updateUrgentWorkStatus);
 router.delete("/urgent-works/:id", checkPermission("DELETE_URGENT_WORK", "MANAGE_URGENT_WORK"), deleteUrgentWork);
 
-router.post("/daily-tasks/create", checkPermission("CREATE_DAILY_TASKS", "MANAGE_DAILY_TASKS"), createDailyTask);
+router.post("/daily-tasks/create", checkPermission("VIEW_DAILY_TASKS", "CREATE_DAILY_TASKS", "MANAGE_DAILY_TASKS"), createDailyTask);
+router.post("/daily-tasks/push-evening-report", checkPermission("VIEW_DAILY_TASKS", "CREATE_DAILY_TASKS", "EDIT_DAILY_TASKS", "MANAGE_DAILY_TASKS", "VIEW_PROJECTS", "EDIT_PROJECTS", "MANAGE_PROJECTS"), pushEveningReportFromTodos);
 router.get("/daily-tasks/list", checkPermission("VIEW_DAILY_TASKS", "CREATE_DAILY_TASKS", "EDIT_DAILY_TASKS", "DELETE_DAILY_TASKS", "MANAGE_DAILY_TASKS"), getDailyTasks);
 router.get("/daily-tasks/options", checkPermission("VIEW_DAILY_TASKS", "CREATE_DAILY_TASKS", "EDIT_DAILY_TASKS", "MANAGE_DAILY_TASKS"), getDailyTaskOptions);
 router.get("/daily-tasks/alerts", checkPermission("VIEW_DAILY_TASKS", "CREATE_DAILY_TASKS", "EDIT_DAILY_TASKS", "MANAGE_DAILY_TASKS"), getDailyPlanAlerts);
@@ -359,9 +361,9 @@ router.patch("/notifications/read-all", markAllNotificationsRead);
 router.patch("/notifications/:id/read", markNotificationRead);
 router.get("/daily-tasks/export", checkPermission("VIEW_DAILY_TASKS", "MANAGE_DAILY_TASKS"), exportDailyTasks);
 router.get("/daily-tasks/details/:id", checkPermission("VIEW_DAILY_TASKS", "CREATE_DAILY_TASKS", "EDIT_DAILY_TASKS", "DELETE_DAILY_TASKS", "MANAGE_DAILY_TASKS"), getDailyTaskById);
-router.patch("/daily-tasks/update/:id", checkPermission("EDIT_DAILY_TASKS", "MANAGE_DAILY_TASKS"), updateDailyTask);
-router.patch("/daily-tasks/:id/status", checkPermission("EDIT_DAILY_TASKS", "MANAGE_DAILY_TASKS"), updateDailyTaskStatus);
-router.delete("/daily-tasks/:id", checkPermission("DELETE_DAILY_TASKS", "MANAGE_DAILY_TASKS"), deleteDailyTask);
+router.patch("/daily-tasks/update/:id", checkPermission("VIEW_DAILY_TASKS", "EDIT_DAILY_TASKS", "MANAGE_DAILY_TASKS"), updateDailyTask);
+router.patch("/daily-tasks/:id/status", checkPermission("VIEW_DAILY_TASKS", "EDIT_DAILY_TASKS", "MANAGE_DAILY_TASKS"), updateDailyTaskStatus);
+router.delete("/daily-tasks/:id", checkPermission("VIEW_DAILY_TASKS", "DELETE_DAILY_TASKS", "MANAGE_DAILY_TASKS"), deleteDailyTask);
 
 router.post("/tickets/create", checkPermission("CREATE_TICKETS", "MANAGE_TICKETS"), receiveTicketFile, createTicket);
 router.get("/tickets/list", checkPermission("VIEW_TICKETS", "CREATE_TICKETS", "EDIT_TICKETS", "DELETE_TICKETS", "MANAGE_TICKETS"), getTickets);

@@ -3,6 +3,7 @@ const MeetRequest = require("../models/MeetRequest");
 const Client = require("../models/Client");
 const User = require("../models/User");
 const { notify } = require("../utils/notify");
+const { clientPopulateSelect, redactClient } = require("../utils/clientRedaction");
 
 const fail = (message, status = 400) => {
     const error = new Error(message);
@@ -77,8 +78,8 @@ const readEmployeeIds = async (value) => {
     return ids;
 };
 
-const withPeople = (query) => query
-    .populate("client", "name clientId email phone reportingManager")
+const withPeople = (query, user = null) => query
+    .populate("client", `${clientPopulateSelect(user)} reportingManager`)
     .populate("reportingManager", "name")
     .populate("employees", "name employeeId")
     .populate("createdByUser", "name")
@@ -93,11 +94,21 @@ const present = (row, req) => {
     const isInvitee = (row.employees || []).some((person) => idOf(person) === uid);
     const canApprove = !clientSide && row.status === "PENDING" && (isAdmin(req.user) || isRm);
     const canManage = !clientSide && (isAdmin(req.user) || isRm || isCreatorStaff);
+    const clientSafe = row.client && row.client._id
+        ? redactClient(
+            {
+                _id: row.client._id,
+                name: row.client.name,
+                clientId: row.client.clientId,
+                email: row.client.email,
+                phone: row.client.phone,
+            },
+            clientSide ? { userType: "ADMIN" } : req.user
+        )
+        : row.client;
     return {
         _id: row._id,
-        client: row.client && row.client._id
-            ? { _id: row.client._id, name: row.client.name, clientId: row.client.clientId, email: row.client.email }
-            : row.client,
+        client: clientSafe,
         scheduledAt: row.scheduledAt,
         agenda: row.agenda,
         meetLink: (clientSide ? row.status === "APPROVED" : true) ? (row.meetLink || "") : "",
@@ -151,7 +162,7 @@ const listStaffMeetings = async (req, res, next) => {
 
         const [total, rows] = await Promise.all([
             MeetRequest.countDocuments(filter),
-            withPeople(MeetRequest.find(filter)).sort({ scheduledAt: -1 }).skip(skip).limit(limitNum).lean(),
+            withPeople(MeetRequest.find(filter), req.user).sort({ scheduledAt: -1 }).skip(skip).limit(limitNum).lean(),
         ]);
 
         res.status(200).json({
@@ -175,7 +186,7 @@ const listClientMeetings = async (req, res, next) => {
 
         const [total, rows] = await Promise.all([
             MeetRequest.countDocuments(filter),
-            withPeople(MeetRequest.find(filter)).sort({ scheduledAt: -1 }).skip(skip).limit(limitNum).lean(),
+            withPeople(MeetRequest.find(filter), { userType: "ADMIN" }).sort({ scheduledAt: -1 }).skip(skip).limit(limitNum).lean(),
         ]);
 
         res.status(200).json({
@@ -193,7 +204,10 @@ const getMeeting = async (req, res, next) => {
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
             return res.status(400).json({ success: false, message: "Invalid meeting id" });
         }
-        const row = await withPeople(MeetRequest.findById(req.params.id)).lean();
+        const row = await withPeople(
+            MeetRequest.findById(req.params.id),
+            isClientAuth(req) ? { userType: "ADMIN" } : req.user
+        ).lean();
         if (!row) return res.status(404).json({ success: false, message: "Meeting not found" });
 
         if (isClientAuth(req)) {
@@ -243,7 +257,7 @@ const createClientMeetRequest = async (req, res, next) => {
             extraUserIds: client.reportingManager ? [client.reportingManager] : [],
         });
 
-        const data = await withPeople(MeetRequest.findById(row._id)).lean();
+        const data = await withPeople(MeetRequest.findById(row._id), isClientAuth(req) ? { userType: "ADMIN" } : req.user).lean();
         res.status(201).json({ success: true, message: "Meet request sent for approval", data: present(data, req) });
     } catch (error) {
         if (error.status) return res.status(error.status).json({ success: false, message: error.message });
@@ -292,7 +306,7 @@ const createStaffMeeting = async (req, res, next) => {
             extraUserIds: [...employees, client.reportingManager].filter(Boolean),
         });
 
-        const data = await withPeople(MeetRequest.findById(row._id)).lean();
+        const data = await withPeople(MeetRequest.findById(row._id), isClientAuth(req) ? { userType: "ADMIN" } : req.user).lean();
         res.status(201).json({
             success: true,
             message: "Meeting created — client (and selected employees) can join",
@@ -341,7 +355,7 @@ const approveMeeting = async (req, res, next) => {
             extraUserIds: employees,
         });
 
-        const data = await withPeople(MeetRequest.findById(row._id)).lean();
+        const data = await withPeople(MeetRequest.findById(row._id), isClientAuth(req) ? { userType: "ADMIN" } : req.user).lean();
         res.status(200).json({ success: true, message: "Approved — client can open the Meet link", data: present(data, req) });
     } catch (error) {
         if (error.status) return res.status(error.status).json({ success: false, message: error.message });
@@ -363,7 +377,7 @@ const rejectMeeting = async (req, res, next) => {
         row.rejectedAt = new Date();
         row.rejectReason = String(req.body?.reason || "").trim().slice(0, 500);
         await row.save();
-        const data = await withPeople(MeetRequest.findById(row._id)).lean();
+        const data = await withPeople(MeetRequest.findById(row._id), isClientAuth(req) ? { userType: "ADMIN" } : req.user).lean();
         res.status(200).json({ success: true, message: "Meet request rejected", data: present(data, req) });
     } catch (error) {
         if (error.status) return res.status(error.status).json({ success: false, message: error.message });
@@ -391,7 +405,7 @@ const cancelMeeting = async (req, res, next) => {
 
         row.status = "CANCELLED";
         await row.save();
-        const data = await withPeople(MeetRequest.findById(row._id)).lean();
+        const data = await withPeople(MeetRequest.findById(row._id), isClientAuth(req) ? { userType: "ADMIN" } : req.user).lean();
         res.status(200).json({ success: true, message: "Meeting cancelled", data: present(data, req) });
     } catch (error) {
         if (error.status) return res.status(error.status).json({ success: false, message: error.message });

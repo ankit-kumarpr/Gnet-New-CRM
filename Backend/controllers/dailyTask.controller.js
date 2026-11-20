@@ -3,6 +3,9 @@ const ExcelJS = require("exceljs");
 const DailyTask = require("../models/DailyTask");
 const { PRIORITIES, STATUSES } = require("../models/DailyTask");
 const User = require("../models/User");
+const Client = require("../models/Client");
+const Project = require("../models/Project");
+const ClientEveningReport = require("../models/ClientEveningReport");
 const SoftwareSetting = require("../models/SoftwareSetting");
 const { downlineIds } = require("../utils/reporting");
 
@@ -197,7 +200,51 @@ const canDeleteTask = async (task, user, downlineSet = null) => {
 
 const withPeople = (query) => query
     .populate("assignee", "name")
-    .populate("createdBy", "name");
+    .populate("createdBy", "name")
+    .populate("client", "name clientId")
+    .populate("project", "name");
+
+const assignedProjectsForUser = async (user) => {
+    if (isAdmin(user) || seesEveryTask(user)) {
+        return Project.find({})
+            .select("name client reportingManager")
+            .populate("client", "name clientId")
+            .sort({ name: 1 })
+            .limit(500)
+            .lean();
+    }
+    const uid = user._id;
+    return Project.find({
+        $or: [
+            { reportingManager: uid },
+            { workingEmployees: uid },
+            { "serviceAssignments.employee": uid },
+        ],
+    })
+        .select("name client reportingManager")
+        .populate("client", "name clientId")
+        .sort({ name: 1 })
+        .limit(500)
+        .lean();
+};
+
+const readClientProject = async (body, user) => {
+    const projectId = String(body.project || "").trim();
+    if (!projectId || !mongoose.Types.ObjectId.isValid(projectId)) {
+        fail("Select an assigned project");
+    }
+    const allowed = await assignedProjectsForUser(user);
+    const project = allowed.find((row) => String(row._id) === projectId);
+    if (!project) fail("You can only add todos on projects assigned to you", 403);
+    const clientId = project.client?._id || project.client;
+    if (!clientId) fail("Selected project has no client");
+    return {
+        project: project._id,
+        projectName: project.name || "",
+        client: clientId,
+        clientName: project.client?.name || "",
+    };
+};
 
 const presentTask = (task, flags = {}) => ({
     ...task,
@@ -241,18 +288,22 @@ const readProgress = (body, { requireProgress = false } = {}) => {
 const readFields = async (body, user) => {
     const title = readText(body.title, 200, "Title", { required: true });
     if (title.length < 2) fail("Title must be at least 2 characters");
-    const work = readText(body.work, 2000, "Work", { required: true });
+    // Work detail optional for quick self-todos — fall back to title.
+    const work = readText(body.work, 2000, "Work") || title;
     const priority = body.priority || "MEDIUM";
     if (!PRIORITIES.includes(priority)) fail("Select a valid priority");
     const progress = readProgress(body, { requireProgress: false });
+    const link = await readClientProject(body, user);
+    const assigneeRaw = body.assignee || user._id;
     return {
-        assignee: await readAssignee(body.assignee, user),
+        assignee: await readAssignee(assigneeRaw, user),
         date: readDay(body.date),
         title,
         work,
         priority,
         ...progress,
         remark: readText(body.remark, 2000, "Remark"),
+        ...link,
     };
 };
 
@@ -262,16 +313,24 @@ const getDailyTaskOptions = async (req, res, next) => {
         const visible = await visiblePeople(req.user);
         if (visible) peopleFilter._id = { $in: visible };
 
-        const employees = await User.find(peopleFilter)
-            .select("name")
-            .sort({ name: 1 })
-            .limit(500)
-            .lean();
+        const [employees, projects] = await Promise.all([
+            User.find(peopleFilter).select("name").sort({ name: 1 }).limit(500).lean(),
+            assignedProjectsForUser(req.user),
+        ]);
+
+        const projectOptions = (projects || []).map((row) => ({
+            _id: row._id,
+            name: row.name,
+            client: row.client?._id || row.client,
+            clientName: row.client?.name || "",
+            clientId: row.client?.clientId || "",
+        }));
 
         res.status(200).json({
             success: true,
             data: {
                 employees,
+                projects: projectOptions,
                 priorities: PRIORITIES,
                 statuses: STATUSES,
             },
@@ -728,6 +787,126 @@ const deleteDailyTask = async (req, res, next) => {
     }
 };
 
+/** Build / refresh evening report lines from the employee's own todos for the day. */
+const pushEveningReportFromTodos = async (req, res, next) => {
+    try {
+        const day = readDay(req.body.date || new Date().toISOString().slice(0, 10));
+        const dayEnd = new Date(day);
+        dayEnd.setDate(dayEnd.getDate() + 1);
+        const onlyClient = String(req.body.client || "").trim();
+
+        const filter = {
+            assignee: req.user._id,
+            date: { $gte: day, $lt: dayEnd },
+            client: { $ne: null },
+        };
+        if (onlyClient) {
+            if (!mongoose.Types.ObjectId.isValid(onlyClient)) fail("Invalid client");
+            filter.client = onlyClient;
+        }
+
+        const tasks = await DailyTask.find(filter).sort({ createdAt: 1 }).lean();
+        if (!tasks.length) fail("No todos found for this date. Add todos first.");
+
+        const byClient = new Map();
+        for (const task of tasks) {
+            const cid = String(task.client);
+            if (!byClient.has(cid)) byClient.set(cid, []);
+            byClient.get(cid).push(task);
+        }
+
+        const results = [];
+        for (const [clientId, rows] of byClient.entries()) {
+            const client = await Client.findById(clientId).select("name reportingManager").lean();
+            if (!client) continue;
+
+            let report = await ClientEveningReport.findOne({ client: clientId, date: day });
+            if (report && report.status !== "DRAFT") {
+                results.push({
+                    clientId,
+                    clientName: client.name,
+                    skipped: true,
+                    reason: `Report is ${report.status} — unlock/draft needed to update`,
+                    reportId: report._id,
+                });
+                continue;
+            }
+
+            if (!report) {
+                report = await ClientEveningReport.create({
+                    client: clientId,
+                    date: day,
+                    status: "DRAFT",
+                    items: [],
+                    notes: "",
+                    reportingManager: client.reportingManager || null,
+                    contributors: [req.user._id],
+                    generatedAt: new Date(),
+                });
+            }
+
+            const others = (report.items || []).filter(
+                (item) => String(item.assigneeId || "") !== String(req.user._id)
+            );
+            const mine = rows.map((task) => ({
+                planId: null,
+                projectId: task.project || null,
+                projectName: task.projectName || "",
+                serviceId: null,
+                serviceName: "",
+                slotId: String(task._id),
+                label: task.title,
+                kind: "TODO",
+                status: task.status === "DONE" ? "DONE" : task.status === "PARTIAL" ? "PARTIAL" : task.status === "HOLD" ? "HOLD" : "PENDING",
+                note: [task.work, task.workDone, task.pendingWork].filter(Boolean).join(" · ").slice(0, 500),
+                assigneeId: req.user._id,
+                assigneeName: req.user.name || "",
+            }));
+
+            const doneLines = rows
+                .filter((task) => task.status === "DONE")
+                .map((task) => `• ${task.title}${task.workDone ? ` — ${task.workDone}` : ""}`);
+            const pendingLines = rows
+                .filter((task) => task.status !== "DONE")
+                .map((task) => `• ${task.title} (${STATUS_LABELS[task.status] || task.status})`);
+
+            const autoNotes = [
+                `<p><strong>Today's work — ${req.user.name || "Employee"}</strong></p>`,
+                doneLines.length ? `<p><strong>Completed</strong></p><p>${doneLines.join("<br/>")}</p>` : "",
+                pendingLines.length ? `<p><strong>Pending</strong></p><p>${pendingLines.join("<br/>")}</p>` : "",
+            ].filter(Boolean).join("");
+
+            report.items = [...others, ...mine];
+            if (!(report.contributors || []).some((id) => String(id) === String(req.user._id))) {
+                report.contributors = [...(report.contributors || []), req.user._id];
+            }
+            // Keep existing notes if lead already wrote; otherwise set from todos.
+            if (!String(report.notes || "").trim() || String(report.notes).includes("Today's work —")) {
+                report.notes = autoNotes;
+            }
+            report.markModified("items");
+            await report.save();
+
+            results.push({
+                clientId,
+                clientName: client.name,
+                skipped: false,
+                reportId: report._id,
+                items: mine.length,
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Evening report updated from your todos",
+            data: results,
+        });
+    } catch (error) {
+        if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
 module.exports = {
     createDailyTask,
     getDailyTasks,
@@ -738,4 +917,5 @@ module.exports = {
     updateDailyTaskStatus,
     exportDailyTasks,
     deleteDailyTask,
+    pushEveningReportFromTodos,
 };

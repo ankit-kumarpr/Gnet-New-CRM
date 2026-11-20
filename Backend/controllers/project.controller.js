@@ -271,10 +271,10 @@ const canSeeAllAssignments = (project, user, downline) => {
 };
 
 const shapeForViewer = (project, user, downline, extra = {}) => {
-    const data = presentProject(project, {
+    const data = redactNestedClient(presentProject(project, {
         canUpdateStatus: canUpdateStatus(project, user, downline),
         ...extra,
-    });
+    }), user);
     if (canSeeAllAssignments(project, user, downline)) {
         return { ...data, canSeeAllAssignments: true };
     }
@@ -293,8 +293,10 @@ const shapeForViewer = (project, user, downline, extra = {}) => {
     };
 };
 
-const withPeople = (query) => query
-    .populate("client", "name phone email")
+const { clientPopulateSelect, redactNestedClient, redactNestedClients, redactClients } = require("../utils/clientRedaction");
+
+const withPeople = (query, user = null) => query
+    .populate("client", clientPopulateSelect(user))
     .populate("services", "name")
     .populate("serviceAssignments.service", "name")
     .populate("serviceAssignments.employee", "name")
@@ -332,7 +334,7 @@ const createProject = async (req, res, next) => {
             actorId: req.user._id,
             extraUserIds: assigneeIds,
         });
-        const data = await withPeople(Project.findById(project._id)).lean();
+        const data = await withPeople(Project.findById(project._id), req.user).lean();
         const downline = req.user.userType === "ADMIN"
             ? new Set()
             : new Set((await downlineIds(req.user._id)).map((item) => String(item)));
@@ -410,7 +412,7 @@ const getProjects = async (req, res, next) => {
 
         const [total, rows, downlineList] = await Promise.all([
             Project.countDocuments(filter),
-            withPeople(Project.find(filter)).sort({ eod: 1, createdAt: -1 }).skip(skip).limit(limitNum).lean(),
+            withPeople(Project.find(filter), req.user).sort({ eod: 1, createdAt: -1 }).skip(skip).limit(limitNum).lean(),
             req.user.userType === "ADMIN" ? Promise.resolve([]) : downlineIds(req.user._id),
         ]);
         const downline = new Set(downlineList.map((item) => String(item)));
@@ -442,12 +444,12 @@ const getProjectEmployees = async (req, res, next) => {
 const getProjectClients = async (req, res, next) => {
     try {
         const clients = await Client.find({})
-            .select("name phone email services")
+            .select("name phone email services clientId")
             .populate("services", "name")
             .sort({ name: 1 })
             .limit(500)
             .lean();
-        res.status(200).json({ success: true, data: clients });
+        res.status(200).json({ success: true, data: redactClients(clients, req.user) });
     } catch (error) {
         next(error);
     }
@@ -458,7 +460,7 @@ const getProjectById = async (req, res, next) => {
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
             return res.status(400).json({ success: false, message: "Invalid project ID format" });
         }
-        const project = await withPeople(Project.findById(req.params.id)).lean();
+        const project = await withPeople(Project.findById(req.params.id), req.user).lean();
         if (!(await canOpenProject(project, req.user))) return res.status(404).json({ success: false, message: "Project not found" });
         const downline = req.user.userType === "ADMIN"
             ? new Set()
@@ -495,7 +497,7 @@ const updateProject = async (req, res, next) => {
             startDate: project.createdAt || new Date(),
         });
 
-        const data = await withPeople(Project.findById(project._id)).lean();
+        const data = await withPeople(Project.findById(project._id), req.user).lean();
         const downline = req.user.userType === "ADMIN"
             ? new Set()
             : new Set((await downlineIds(req.user._id)).map((item) => String(item)));
@@ -549,7 +551,7 @@ const updateProjectStatus = async (req, res, next) => {
                 extraUserIds: [project.reportingManager, ...(project.workingEmployees || [])],
             });
         }
-        const data = await withPeople(Project.findById(project._id)).lean();
+        const data = await withPeople(Project.findById(project._id), req.user).lean();
         res.status(200).json({
             success: true,
             data: shapeForViewer(data, req.user, downline, { canUpdateStatus: true }),

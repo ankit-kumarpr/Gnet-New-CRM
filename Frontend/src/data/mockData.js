@@ -99,7 +99,7 @@ export const navigationData = [
           { name: "Today's reports", href: "/dashboard/evening-reports/today", end: false, permissionsNeeded: ["VIEW_PROJECTS", "CREATE_PROJECTS", "EDIT_PROJECTS", "DELETE_PROJECTS", "MANAGE_PROJECTS"] },
         ],
       },
-      { name: "Daily tasks", href: "/dashboard/daily-tasks", icon: CheckSquare, allowedRoles: ["ADMIN", "EMPLOYEE"], permissionsNeeded: ["VIEW_DAILY_TASKS", "CREATE_DAILY_TASKS", "EDIT_DAILY_TASKS", "DELETE_DAILY_TASKS", "MANAGE_DAILY_TASKS"] },
+      { name: "My daily todos", href: "/dashboard/daily-tasks", icon: CheckSquare, allowedRoles: ["ADMIN", "EMPLOYEE"], permissionsNeeded: ["VIEW_DAILY_TASKS", "CREATE_DAILY_TASKS", "EDIT_DAILY_TASKS", "DELETE_DAILY_TASKS", "MANAGE_DAILY_TASKS"] },
       { name: "Urgent work", href: "/dashboard/urgent-work", icon: ListTodo, allowedRoles: ["ADMIN", "EMPLOYEE"], permissionsNeeded: ["VIEW_URGENT_WORK", "CREATE_URGENT_WORK", "EDIT_URGENT_WORK", "DELETE_URGENT_WORK", "MANAGE_URGENT_WORK"] },
       { name: "Help", href: "/dashboard/help", icon: LifeBuoy, allowedRoles: ["ADMIN", "EMPLOYEE"], permissionsNeeded: ["VIEW_TICKETS", "CREATE_TICKETS", "MANAGE_TICKETS", "EDIT_TICKETS", "DELETE_TICKETS"] },
     ],

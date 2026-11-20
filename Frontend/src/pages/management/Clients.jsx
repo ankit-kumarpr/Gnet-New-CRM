@@ -96,6 +96,7 @@ export function Clients() {
   const canCreate = hasPermission("MANAGE_CLIENTS") || hasPermission("CREATE_CLIENTS");
   const canEdit = hasPermission("MANAGE_CLIENTS") || hasPermission("EDIT_CLIENTS");
   const canDelete = hasPermission("MANAGE_CLIENTS") || hasPermission("DELETE_CLIENTS");
+  const canViewContact = canCreate || canEdit || hasPermission("MANAGE_CLIENTS");
   const [rows, setRows] = useState([]);
   const [serviceOptions, setServiceOptions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -639,7 +640,7 @@ export function Clients() {
       <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input placeholder="Search name, email, or phone..." className="pl-9" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} />
+          <Input placeholder={canViewContact ? "Search name, email, or phone..." : "Search client name..."} className="pl-9" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} />
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
@@ -694,7 +695,9 @@ export function Clients() {
             <thead className="bg-slate-50">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Client</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Phone</th>
+                {canViewContact && (
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Phone</th>
+                )}
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Renewal</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Amount</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Services</th>
@@ -703,16 +706,19 @@ export function Clients() {
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
               {loading ? (
-                <tr><td colSpan="6" className="px-6 py-8 text-center text-slate-500">Loading...</td></tr>
+                <tr><td colSpan={canViewContact ? 6 : 5} className="px-6 py-8 text-center text-slate-500">Loading...</td></tr>
               ) : rows.length === 0 ? (
-                <tr><td colSpan="6" className="px-6 py-8 text-center text-slate-500">No clients found.</td></tr>
+                <tr><td colSpan={canViewContact ? 6 : 5} className="px-6 py-8 text-center text-slate-500">No clients found.</td></tr>
               ) : rows.map((row) => (
                 <tr key={row._id} className="transition-colors hover:bg-slate-50">
                   <td className="px-6 py-4 text-sm">
                     <button type="button" className="text-left font-medium text-slate-900 hover:text-[#3569A8]" onClick={() => navigate(`/dashboard/clients/${row._id}`)}>{row.name}</button>
-                    {row.email && <div className="text-slate-500">{row.email}</div>}
+                    {canViewContact && row.email && <div className="text-slate-500">{row.email}</div>}
+                    {row.clientId && <div className="text-xs text-slate-400">{row.clientId}</div>}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-700">{row.phone}</td>
+                  {canViewContact && (
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-700">{row.phone || "—"}</td>
+                  )}
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-700">
                     {(() => {
                       const next = nextPaymentRow(row.payments);

@@ -11,6 +11,7 @@ const { generateIds } = generateId;
 const { sendClientWelcome } = require("../utils/mailer");
 const { isInReminderWindow } = require("../utils/clientPaymentReminders");
 const { permissionGranted, DEFAULT_CLIENT_PERMISSIONS } = require("../utils/permissions");
+const { redactClient, redactClients, canViewClientContact } = require("../utils/clientRedaction");
 
 const CLIENT_BULK_HEADERS = [
     "Name",
@@ -329,7 +330,7 @@ const createClient = async (req, res, next) => {
             .lean();
         res.status(201).json({
             success: true,
-            data,
+            data: redactClient(data, req.user),
             mail,
             message: mail.sent
                 ? "Client created and welcome mail sent"
@@ -461,7 +462,7 @@ const getClients = async (req, res, next) => {
 
         res.status(200).json({
             success: true,
-            data: clients,
+            data: redactClients(clients, req.user),
             pagination: { total, page: pageNum, pages: Math.ceil(total / limitNum) || 1, limit: limitNum },
         });
     } catch (error) {
@@ -487,7 +488,7 @@ const getClientById = async (req, res, next) => {
         if (!client) {
             return res.status(404).json({ success: false, message: "Client not found" });
         }
-        res.status(200).json({ success: true, data: client });
+        res.status(200).json({ success: true, data: redactClient(client, req.user) });
     } catch (error) {
         next(error);
     }
@@ -532,7 +533,7 @@ const updateClient = async (req, res, next) => {
             .populate("services", "name description")
             .populate("reportingManager", "name email phone")
             .lean();
-        res.status(200).json({ success: true, data });
+        res.status(200).json({ success: true, data: redactClient(data, req.user) });
     } catch (error) {
         if (error.code === 11000) {
             const field = error.keyPattern?.phone ? "phone number" : error.keyPattern?.email ? "email" : "email or phone";
@@ -626,7 +627,7 @@ const markClientPaymentPaid = async (req, res, next) => {
         res.status(200).json({
             success: true,
             message: markPaid ? "Payment marked as done" : "Payment marked as unpaid",
-            data,
+            data: redactClient(data, req.user),
         });
     } catch (error) {
         next(error);
@@ -635,6 +636,9 @@ const markClientPaymentPaid = async (req, res, next) => {
 
 const exportClientPayments = async (req, res, next) => {
     try {
+        if (!canViewClientContact(req.user)) {
+            return res.status(403).json({ success: false, message: "You cannot export client contact details" });
+        }
         const { paymentFilter = "notify", renewalFrom, renewalTo } = req.query;
         const today = startOfDay(new Date());
         const mode = String(paymentFilter || "notify").toLowerCase();

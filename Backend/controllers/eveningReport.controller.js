@@ -5,6 +5,7 @@ const Project = require("../models/Project");
 const { istParts } = require("../utils/eveningReportGenerator");
 const { startOfDay } = require("../utils/workPlanSchedule");
 const { notify } = require("../utils/notify");
+const { canViewClientContact } = require("../utils/clientRedaction");
 
 const fail = (message, status = 400) => {
     const error = new Error(message);
@@ -110,8 +111,9 @@ const present = (row, user, req, { assignedOk = false } = {}) => {
                 _id: row.client._id,
                 name: row.client.name,
                 clientId: row.client.clientId,
-                phone: row.client.phone || "",
-                whatsapp: row.client.whatsapp || "",
+                ...(canViewClientContact(user)
+                    ? { phone: row.client.phone || "", whatsapp: row.client.whatsapp || "" }
+                    : {}),
             }
             : row.client,
         date: row.date,
@@ -154,7 +156,7 @@ const present = (row, user, req, { assignedOk = false } = {}) => {
 };
 
 const withPeople = (query) => query
-    .populate("client", "name clientId phone whatsapp")
+    .populate("client", "name clientId phone whatsapp") // phone/whatsapp stripped in present() for normal employees
     .populate("reportingManager", "name")
     .populate("lockedBy", "name")
     .populate("approvedBy", "name")

@@ -22,6 +22,7 @@ export function ClientView() {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const canEdit = hasPermission("MANAGE_CLIENTS") || hasPermission("EDIT_CLIENTS");
+  const canViewContact = canEdit || hasPermission("CREATE_CLIENTS") || hasPermission("MANAGE_CLIENTS");
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [paymentBusy, setPaymentBusy] = useState("");
@@ -102,15 +103,18 @@ export function ClientView() {
             </div>
           </div>
         </div>
-        <div className="grid gap-3 px-6 py-5 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
-          <p className="flex items-start gap-2"><Mail className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{show(client.email)}</p>
-          <p className="flex items-start gap-2"><Phone className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{show(client.phone)}</p>
-          <p className="flex items-start gap-2"><MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{show(client.whatsapp)}</p>
-          <p className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{line || "No address saved"}</p>
-        </div>
+        {canViewContact ? (
+          <div className="grid gap-3 px-6 py-5 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
+            <p className="flex items-start gap-2"><Mail className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{show(client.email)}</p>
+            <p className="flex items-start gap-2"><Phone className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{show(client.phone)}</p>
+            <p className="flex items-start gap-2"><MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{show(client.whatsapp)}</p>
+            <p className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#3569A8]" />{line || "No address saved"}</p>
+          </div>
+        ) : null}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
+        {canViewContact ? (
         <section className="rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-slate-900">Address</h3>
           <dl className="mt-3 space-y-2 text-sm">
@@ -121,7 +125,9 @@ export function ClientView() {
             <div className="flex justify-between gap-4"><dt className="text-slate-500">Pincode</dt><dd className="text-right text-slate-900">{show(client.address?.pincode)}</dd></div>
           </dl>
         </section>
+        ) : null}
 
+        {canViewContact ? (
         <section className="rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-slate-900">Payment / renewal</h3>
           <p className="mt-1 text-xs text-slate-500">Alerts start 5 days before unpaid renewal dates. Mark paid to stop them.</p>
@@ -183,11 +189,14 @@ export function ClientView() {
             </ul>
           )}
         </section>
+        ) : null}
 
-        <section className="rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-900">Remark</h3>
-          <p className="mt-3 whitespace-pre-wrap text-sm text-slate-900">{show(client.remark)}</p>
-        </section>
+        {canViewContact ? (
+          <section className="rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-slate-900">Remark</h3>
+            <p className="mt-3 whitespace-pre-wrap text-sm text-slate-900">{show(client.remark)}</p>
+          </section>
+        ) : null}
       </div>
 
       <section className="rounded-2xl border border-[#E5EAF1] bg-white p-5 shadow-sm">

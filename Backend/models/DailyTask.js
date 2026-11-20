@@ -13,6 +13,10 @@ const dailyTaskSchema = new mongoose.Schema({
     workDone: { type: String, trim: true, maxlength: 2000, default: "" },
     pendingWork: { type: String, trim: true, maxlength: 2000, default: "" },
     remark: { type: String, trim: true, maxlength: 2000, default: "" },
+    client: { type: mongoose.Schema.Types.ObjectId, ref: "Client", default: null, index: true },
+    project: { type: mongoose.Schema.Types.ObjectId, ref: "Project", default: null, index: true },
+    clientName: { type: String, trim: true, maxlength: 120, default: "" },
+    projectName: { type: String, trim: true, maxlength: 120, default: "" },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     isDeleted: { type: Boolean, default: false, index: true },
     deletedAt: { type: Date, default: null },
@@ -22,6 +26,7 @@ const dailyTaskSchema = new mongoose.Schema({
 dailyTaskSchema.index({ assignee: 1, date: 1 });
 dailyTaskSchema.index({ date: 1, status: 1 });
 dailyTaskSchema.index({ createdBy: 1 });
+dailyTaskSchema.index({ client: 1, date: 1 });
 dailyTaskSchema.index({ isDeleted: 1, deletedAt: -1 });
 
 const excludeDeleted = function excludeDeleted() {
