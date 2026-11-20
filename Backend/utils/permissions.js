@@ -20,8 +20,9 @@ const DEFAULT_EMPLOYEE_PERMISSIONS = [
     "VIEW_URGENT_WORK",
 ];
 
-/** Always merged for employees so assigned work stays visible even if admin trimmed perms. */
+/** Always merged for employees so core workspace stays visible even if admin trimmed perms. */
 const EMPLOYEE_ASSIGNED_WORK_PERMISSIONS = [
+    "VIEW_DASHBOARD",
     "VIEW_CLIENTS",
     "VIEW_PROJECTS",
     "VIEW_DAILY_TASKS",

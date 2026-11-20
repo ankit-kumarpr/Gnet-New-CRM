@@ -95,8 +95,8 @@ export const navigationData = [
         permissionsNeeded: ["VIEW_PROJECTS", "CREATE_PROJECTS", "EDIT_PROJECTS", "DELETE_PROJECTS", "MANAGE_PROJECTS"],
         children: [
           { name: "All projects", href: "/dashboard/projects", permissionsNeeded: ["VIEW_PROJECTS", "CREATE_PROJECTS", "EDIT_PROJECTS", "DELETE_PROJECTS", "MANAGE_PROJECTS"] },
-          { name: "Evening reports", href: "/dashboard/evening-reports", end: false, permissionsNeeded: ["VIEW_PROJECTS", "EDIT_PROJECTS", "MANAGE_PROJECTS"] },
-          { name: "Today's reports", href: "/dashboard/evening-reports/today", end: false, permissionsNeeded: ["VIEW_PROJECTS", "EDIT_PROJECTS", "MANAGE_PROJECTS"] },
+          { name: "Evening reports", href: "/dashboard/evening-reports", end: false, permissionsNeeded: ["VIEW_PROJECTS", "CREATE_PROJECTS", "EDIT_PROJECTS", "DELETE_PROJECTS", "MANAGE_PROJECTS"] },
+          { name: "Today's reports", href: "/dashboard/evening-reports/today", end: false, permissionsNeeded: ["VIEW_PROJECTS", "CREATE_PROJECTS", "EDIT_PROJECTS", "DELETE_PROJECTS", "MANAGE_PROJECTS"] },
         ],
       },
       { name: "Daily tasks", href: "/dashboard/daily-tasks", icon: CheckSquare, allowedRoles: ["ADMIN", "EMPLOYEE"], permissionsNeeded: ["VIEW_DAILY_TASKS", "CREATE_DAILY_TASKS", "EDIT_DAILY_TASKS", "DELETE_DAILY_TASKS", "MANAGE_DAILY_TASKS"] },

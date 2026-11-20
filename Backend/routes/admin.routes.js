@@ -375,17 +375,19 @@ router.get("/projects/list", checkPermission("VIEW_PROJECTS", "CREATE_PROJECTS",
 router.get("/projects/employees", checkPermission("VIEW_PROJECTS", "CREATE_PROJECTS", "EDIT_PROJECTS", "MANAGE_PROJECTS"), getProjectEmployees);
 router.get("/projects/clients", checkPermission("VIEW_PROJECTS", "CREATE_PROJECTS", "EDIT_PROJECTS", "MANAGE_PROJECTS", "VIEW_CLIENTS", "MANAGE_CLIENTS"), getProjectClients);
 router.get("/projects/details/:id", checkPermission("VIEW_PROJECTS", "CREATE_PROJECTS", "EDIT_PROJECTS", "DELETE_PROJECTS", "MANAGE_PROJECTS"), getProjectById);
+// VIEW_PROJECTS is enough for assigned employees (list/create/save/lock own reporting).
+// Approve/unlock stay gated in the controller to RM/Admin.
 router.get("/evening-reports", checkPermission("VIEW_PROJECTS", "EDIT_PROJECTS", "MANAGE_PROJECTS"), listEveningReports);
 router.get("/evening-reports/today", checkPermission("VIEW_PROJECTS", "EDIT_PROJECTS", "MANAGE_PROJECTS"), listTodayApproved);
 router.get("/evening-reports/meta/clients", checkPermission("VIEW_PROJECTS", "EDIT_PROJECTS", "MANAGE_PROJECTS"), listReportClients);
-router.post("/evening-reports/generate", checkPermission("EDIT_PROJECTS", "MANAGE_PROJECTS"), generateNow);
-router.post("/evening-reports", checkPermission("EDIT_PROJECTS", "MANAGE_PROJECTS"), createEveningReport);
+router.post("/evening-reports/generate", checkPermission("VIEW_PROJECTS", "EDIT_PROJECTS", "MANAGE_PROJECTS"), generateNow);
+router.post("/evening-reports", checkPermission("VIEW_PROJECTS", "EDIT_PROJECTS", "MANAGE_PROJECTS"), createEveningReport);
 router.get("/evening-reports/:id", checkPermission("VIEW_PROJECTS", "EDIT_PROJECTS", "MANAGE_PROJECTS"), getEveningReport);
-router.patch("/evening-reports/:id", checkPermission("EDIT_PROJECTS", "MANAGE_PROJECTS"), updateEveningReport);
-router.post("/evening-reports/:id/lock", checkPermission("EDIT_PROJECTS", "MANAGE_PROJECTS"), lockEveningReport);
-router.post("/evening-reports/:id/approve", checkPermission("EDIT_PROJECTS", "MANAGE_PROJECTS"), approveEveningReport);
-router.post("/evening-reports/:id/unlock", checkPermission("EDIT_PROJECTS", "MANAGE_PROJECTS"), unlockEveningReport);
-router.post("/evening-reports/:id/feedback", checkPermission("EDIT_PROJECTS", "MANAGE_PROJECTS"), addEveningFeedback);
+router.patch("/evening-reports/:id", checkPermission("VIEW_PROJECTS", "EDIT_PROJECTS", "MANAGE_PROJECTS"), updateEveningReport);
+router.post("/evening-reports/:id/lock", checkPermission("VIEW_PROJECTS", "EDIT_PROJECTS", "MANAGE_PROJECTS"), lockEveningReport);
+router.post("/evening-reports/:id/approve", checkPermission("VIEW_PROJECTS", "EDIT_PROJECTS", "MANAGE_PROJECTS"), approveEveningReport);
+router.post("/evening-reports/:id/unlock", checkPermission("VIEW_PROJECTS", "EDIT_PROJECTS", "MANAGE_PROJECTS"), unlockEveningReport);
+router.post("/evening-reports/:id/feedback", checkPermission("VIEW_PROJECTS", "EDIT_PROJECTS", "MANAGE_PROJECTS"), addEveningFeedback);
 
 router.get("/meetings", checkPermission("VIEW_CLIENTS", "CREATE_CLIENTS", "EDIT_CLIENTS", "MANAGE_CLIENTS"), listStaffMeetings);
 router.post("/meetings", checkPermission("CREATE_CLIENTS", "EDIT_CLIENTS", "MANAGE_CLIENTS"), createStaffMeeting);

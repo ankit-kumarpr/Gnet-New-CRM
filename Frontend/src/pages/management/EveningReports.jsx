@@ -183,15 +183,25 @@ function ReportDetail({ id, onBack }) {
 
       {editable && (
         <div className="rounded-xl border border-[#E5EAF1] bg-[#EAF1FA]/60 px-4 py-3 text-sm text-[#142B4A]">
-          Write the full report in the <strong>rich text editor</strong> below (this is what the client will see). You can also add optional short checklist lines.
-          After Save/Submit, the RM will <strong>Lock → Approve</strong>.
+          Write <strong>today&apos;s final work</strong> below (client sees this after approval).
+          Save your lines, then <strong>Lock today&apos;s work</strong>. After lock, RM/Admin can approve; you still see your own work.
+        </div>
+      )}
+      {row.status === "LOCKED" && !row.canApprove && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Today&apos;s work is <strong>locked</strong> and waiting for RM/Admin approval. You can still view your lines here.
+        </div>
+      )}
+      {row.status === "LOCKED" && row.canApprove && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Employee locked today&apos;s work. Review the full report, then <strong>Approve</strong> (or send back to draft).
         </div>
       )}
 
       <div className="flex flex-wrap gap-2">
         {editable && (
           <Button type="button" onClick={saveMine} disabled={saving}>
-            {saving ? "Saving..." : (mineOnly ? "Save / Submit my work" : "Save report")}
+            {saving ? "Saving..." : (mineOnly ? "Save my work" : "Save report")}
           </Button>
         )}
         {editable && (
@@ -200,8 +210,8 @@ function ReportDetail({ id, onBack }) {
           </Button>
         )}
         {row.canLock && (
-          <Button type="button" variant="outline" onClick={() => act("lock", "Locked")} disabled={saving}>
-            <Lock className="mr-2 h-4 w-4" /> Lock for approval
+          <Button type="button" variant="outline" onClick={() => act("lock", "Today's work locked")} disabled={saving}>
+            <Lock className="mr-2 h-4 w-4" /> Lock today&apos;s work
           </Button>
         )}
         {row.canApprove && (
@@ -488,7 +498,7 @@ export function EveningReports({ todayMode = false } = {}) {
             {todayMode ? "Today's reports" : "Evening client reports"}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Manual flow: write work done per client → Save/Submit → RM Lock → Approve → visible to client.
+            Flow: write today&apos;s work per client → Save → Employee Lock → RM/Admin Approve → visible to client. Employee always sees own lines.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

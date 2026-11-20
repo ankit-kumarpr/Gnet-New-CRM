@@ -51,10 +51,14 @@ const canEditDraft = (report, user, assignedOk = false) => {
     return canViewStaff(report, user) || assignedOk;
 };
 
-/** Only RM/Admin lock the combined final report (not individual employees). */
+/**
+ * Employee (contributor / assigned) OR RM/Admin can lock today's final work.
+ * After lock → RM/Admin approve; employee still sees their own lines.
+ */
 const canLock = (report, user) => {
     if (report.status !== "DRAFT") return false;
-    return isReportLead(report, user);
+    if (isReportLead(report, user)) return true;
+    return canViewStaff(report, user);
 };
 
 const canApprove = (report, user) => {
@@ -444,7 +448,7 @@ const updateEveningReport = async (req, res, next) => {
         const data = await withPeople(ClientEveningReport.findById(row._id)).lean();
         res.status(200).json({
             success: true,
-            message: lead ? "Report saved" : "Your work was saved / submitted — RM will lock & approve",
+            message: lead ? "Report saved" : "Your work was saved — Lock when today's work is final for RM/admin approval",
             data: present(data, req.user, req, { assignedOk: true }),
         });
     } catch (error) {
@@ -470,14 +474,18 @@ const lockEveningReport = async (req, res, next) => {
         await notify({
             type: "EVENING_REPORT",
             title: `Report locked for approval: ${client?.name || "Client"}`,
-            body: `${req.user.name || "Employee"} locked today's evening report`,
+            body: `${req.user.name || "Someone"} locked today's work — review & approve`,
             href: `/dashboard/evening-reports/${row._id}`,
             actorId: req.user._id,
-            extraUserIds: [row.reportingManager].filter(Boolean),
+            extraUserIds: [row.reportingManager, ...(row.contributors || [])].filter(Boolean),
         });
 
         const data = await withPeople(ClientEveningReport.findById(row._id)).lean();
-        res.status(200).json({ success: true, message: "Report locked — waiting for RM/admin approval", data: present(data, req.user, req) });
+        res.status(200).json({
+            success: true,
+            message: "Today's work locked — RM/admin can approve; you can still view your lines",
+            data: present(data, req.user, req),
+        });
     } catch (error) {
         next(error);
     }

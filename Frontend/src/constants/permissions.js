@@ -95,7 +95,7 @@ export const PERMISSION_GROUPS = [
   {
     category: "Projects",
     permissions: [
-      { key: "VIEW_PROJECTS", label: "View all projects", desc: "See every project beyond own assignments" },
+      { key: "VIEW_PROJECTS", label: "View projects", desc: "See assigned projects (admins/managers see all)" },
       { key: "CREATE_PROJECTS", label: "Create projects", desc: "Add projects" },
       { key: "EDIT_PROJECTS", label: "Edit projects", desc: "Update projects" },
       { key: "DELETE_PROJECTS", label: "Delete projects", desc: "Remove projects" },
@@ -261,8 +261,9 @@ export const DEFAULT_EMPLOYEE_PERMISSIONS = [
   "VIEW_URGENT_WORK",
 ];
 
-/** Always kept for employees so assigned work stays visible in the sidebar. */
+/** Always kept for employees so dashboard + assigned work stay visible in the sidebar. */
 export const EMPLOYEE_ASSIGNED_WORK_PERMISSIONS = [
+  "VIEW_DASHBOARD",
   "VIEW_CLIENTS",
   "VIEW_PROJECTS",
   "VIEW_DAILY_TASKS",
