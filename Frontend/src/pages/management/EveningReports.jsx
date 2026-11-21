@@ -498,7 +498,7 @@ export function EveningReports({ todayMode = false } = {}) {
             {todayMode ? "Today's reports" : "Evening client reports"}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Flow: write today&apos;s work per client → Save → Employee Lock → RM/Admin Approve → visible to client. Employee always sees own lines.
+            Flow: employee completes todos → Submit combined report (auto-locked) → RM/Admin Approve → visible to client. Employee always sees own lines.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { CheckCircle2, Circle, Plus, RefreshCw, Send, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "../../components/ui/Button";
@@ -103,10 +102,16 @@ export function DailyTasks() {
 
   const setStatus = async (task, status) => {
     try {
+      let workDone = task.workDone || task.work || task.title || "";
+      if (status === "DONE") {
+        const note = window.prompt("Optional note for this completed work (shown in evening report):", workDone);
+        if (note === null) return;
+        workDone = String(note).trim() || workDone;
+      }
       setSaving(true);
       await api.patch(`/admin/daily-tasks/${task._id}/status`, {
         status,
-        workDone: status === "DONE" ? (task.workDone || task.work || task.title) : task.workDone,
+        workDone: status === "DONE" ? workDone : task.workDone,
         pendingWork: status === "PENDING" ? "" : task.pendingWork,
       });
       toast.success(status === "DONE" ? "Marked complete" : "Marked pending");
@@ -142,9 +147,15 @@ export function DailyTasks() {
       const rows = res.data.data || [];
       const ok = rows.filter((row) => !row.skipped).length;
       const skipped = rows.filter((row) => row.skipped).length;
-      toast.success(`Evening report updated for ${ok} client(s)${skipped ? ` · ${skipped} skipped` : ""}`);
+      toast.success(
+        ok
+          ? `Submitted ${ok} client report(s) to senior for approval${skipped ? ` · ${skipped} skipped` : ""}`
+          : skipped
+            ? `Nothing submitted · ${skipped} skipped`
+            : (res.data.message || "Submitted")
+      );
     } catch (error) {
-      toast.error(error.response?.data?.message || "Could not build evening report");
+      toast.error(error.response?.data?.message || "Could not submit evening report");
     } finally {
       setPushing(false);
     }
@@ -156,7 +167,7 @@ export function DailyTasks() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-[#26364A]">My daily todos</h1>
           <p className="mt-1 text-sm text-[#718096]">
-            Add your own todos on assigned projects, mark Complete / Pending, then push to evening report per client.
+            Add todos on assigned projects → Complete (optional note) → Submit. Combined report goes straight to senior for approval. No need to open Evening reports.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -166,11 +177,8 @@ export function DailyTasks() {
           </Button>
           <Button type="button" onClick={() => pushReports()} disabled={pushing || !tasks.length}>
             <Send className="mr-2 h-4 w-4" />
-            {pushing ? "Building..." : "Push all to evening reports"}
+            {pushing ? "Submitting..." : "Submit all to senior"}
           </Button>
-          <Link to="/dashboard/evening-reports/today">
-            <Button type="button" variant="outline">Open today&apos;s reports</Button>
-          </Link>
         </div>
       </div>
 
@@ -256,7 +264,7 @@ export function DailyTasks() {
                     onClick={() => pushReports(group.clientId)}
                   >
                     <Send className="mr-1.5 h-3.5 w-3.5" />
-                    Push to evening report
+                    Submit combined report
                   </Button>
                 )}
               </div>

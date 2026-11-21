@@ -8,6 +8,7 @@ const Project = require("../models/Project");
 const ClientEveningReport = require("../models/ClientEveningReport");
 const SoftwareSetting = require("../models/SoftwareSetting");
 const { downlineIds } = require("../utils/reporting");
+const { notify } = require("../utils/notify");
 
 const STATUS_LABELS = {
     PENDING: "Pending",
@@ -821,12 +822,12 @@ const pushEveningReportFromTodos = async (req, res, next) => {
             if (!client) continue;
 
             let report = await ClientEveningReport.findOne({ client: clientId, date: day });
-            if (report && report.status !== "DRAFT") {
+            if (report && report.status === "APPROVED") {
                 results.push({
                     clientId,
                     clientName: client.name,
                     skipped: true,
-                    reason: `Report is ${report.status} — unlock/draft needed to update`,
+                    reason: "Already approved — ask RM to send back if you need changes",
                     reportId: report._id,
                 });
                 continue;
@@ -863,6 +864,7 @@ const pushEveningReportFromTodos = async (req, res, next) => {
                 assigneeName: req.user.name || "",
             }));
 
+            const who = req.user.name || "Employee";
             const doneLines = rows
                 .filter((task) => task.status === "DONE")
                 .map((task) => `• ${task.title}${task.workDone ? ` — ${task.workDone}` : ""}`);
@@ -871,7 +873,7 @@ const pushEveningReportFromTodos = async (req, res, next) => {
                 .map((task) => `• ${task.title} (${STATUS_LABELS[task.status] || task.status})`);
 
             const autoNotes = [
-                `<p><strong>Today's work — ${req.user.name || "Employee"}</strong></p>`,
+                `<p><strong>Today's work — ${who}</strong></p>`,
                 doneLines.length ? `<p><strong>Completed</strong></p><p>${doneLines.join("<br/>")}</p>` : "",
                 pendingLines.length ? `<p><strong>Pending</strong></p><p>${pendingLines.join("<br/>")}</p>` : "",
             ].filter(Boolean).join("");
@@ -880,17 +882,46 @@ const pushEveningReportFromTodos = async (req, res, next) => {
             if (!(report.contributors || []).some((id) => String(id) === String(req.user._id))) {
                 report.contributors = [...(report.contributors || []), req.user._id];
             }
-            // Keep existing notes if lead already wrote; otherwise set from todos.
-            if (!String(report.notes || "").trim() || String(report.notes).includes("Today's work —")) {
+
+            // Replace this employee's auto block; keep other contributors / RM notes.
+            const marker = `Today's work — ${who}`;
+            const existing = String(report.notes || "");
+            if (!existing.trim()) {
                 report.notes = autoNotes;
+            } else if (existing.includes(marker)) {
+                report.notes = existing.replace(
+                    new RegExp(`<p><strong>${marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}</strong></p>[\\s\\S]*?(?=<p><strong>Today's work — |$)`),
+                    `${autoNotes}`
+                );
+            } else if (existing.includes("Today's work —")) {
+                report.notes = `${existing}\n${autoNotes}`;
+            } else {
+                // RM/custom notes already there — append employee block
+                report.notes = `${existing}\n${autoNotes}`;
             }
+
+            // Submit straight to senior — no separate Open → Save → Lock for employee.
+            report.status = "LOCKED";
+            report.lockedAt = new Date();
+            report.lockedBy = req.user._id;
             report.markModified("items");
             await report.save();
+
+            await notify({
+                type: "EVENING_REPORT",
+                title: `Work submitted for approval: ${client.name}`,
+                body: `${who} submitted today's combined report — review & approve`,
+                href: `/dashboard/evening-reports/${report._id}`,
+                actorId: req.user._id,
+                extraUserIds: [report.reportingManager, ...(report.contributors || [])].filter(Boolean),
+            });
 
             results.push({
                 clientId,
                 clientName: client.name,
                 skipped: false,
+                submitted: true,
+                status: "LOCKED",
                 reportId: report._id,
                 items: mine.length,
             });
@@ -898,7 +929,7 @@ const pushEveningReportFromTodos = async (req, res, next) => {
 
         res.status(200).json({
             success: true,
-            message: "Evening report updated from your todos",
+            message: "Submitted to senior for approval",
             data: results,
         });
     } catch (error) {
