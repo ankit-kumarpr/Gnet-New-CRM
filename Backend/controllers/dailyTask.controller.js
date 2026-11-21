@@ -205,8 +205,9 @@ const withPeople = (query) => query
     .populate("client", "name clientId")
     .populate("project", "name");
 
+/** Projects this user is actually on — used for employee self-todos. Admin sees all. */
 const assignedProjectsForUser = async (user) => {
-    if (isAdmin(user) || seesEveryTask(user)) {
+    if (isAdmin(user)) {
         return Project.find({})
             .select("name client reportingManager")
             .populate("client", "name clientId")
@@ -214,7 +215,10 @@ const assignedProjectsForUser = async (user) => {
             .limit(500)
             .lean();
     }
+
     const uid = user._id;
+    // Strict: only projects where employee is RM / working member / service assignee.
+    // Do NOT use MANAGE_DAILY_TASKS here — that was exposing every project in the todo dropdown.
     return Project.find({
         $or: [
             { reportingManager: uid },
